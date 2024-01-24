@@ -101,3 +101,82 @@ def drop_spaces_between_linebreaks(txt):
         out = out.replace('\n    \n','\n\n')
         out = out.replace('\n     \n','\n\n')
     return out    
+
+# ****************************************************************************************
+# Finding Text
+# ****************************************************************************************
+
+# Alternative findall can be done using:
+# https://docs.python.org/3/library/re.html
+# http://www.learningaboutelectronics.com/Articles/How-to-search-for-a-case-insensitive-string-in-text-Python.php
+
+# import re
+# re.finditer(pattern, s, flags=re.IGNORECASE)
+#>>> text = "He was carefully disguised but captured quickly by police."
+#>>> for m in re.finditer(r"\w+ly", text):
+#...     print('%02d-%02d: %s' % (m.start(), m.end(), m.group(0)))
+#07-16: carefully
+#40-47: quickly
+
+# ****************************************************
+# Simple case-sensitive version, not used anymore
+def findall0(pattern, s, region=True, n=30, nback=-1, pattern2=''):
+    if nback<0: nback=n
+    ii = []
+    i = s.find(pattern)
+    while i != -1:
+        if region:
+            t = s[i-nback : i+n]
+            if pattern2!='' and t.count(pattern2)>0:
+                t = t.split(pattern2)[0]
+            ii.append((i,t))
+        else:
+            ii.append(i)
+        i = s.find(pattern, i+1)
+    return ii
+
+# ****************************************************
+# Finds all positions of the pattern p in the string s,
+# if region=True also outputs the next n chars (and previous nback chars) 
+# The text output is cut at pattern2
+def findall(pattern, s, region=True, n=30, nback=-1, pattern2='', ignoreCase=True):
+
+    if nback<0: nback=n
+    ii = []
+    if ignoreCase:
+        i = s.lower().find(pattern.lower())
+    else:
+        i = s.find(pattern)
+    while i != -1:
+        if region:
+            t = s[max(0,i-nback) : i+n]   
+            
+            # Stop string at pattern2
+            
+            if pattern2 != '':
+                if ignoreCase: index2 = t.lower().find(pattern2.lower())
+                else:          index2 = t.find(pattern2)
+                if index2 != -1:
+                    t = t[:index2]
+
+            ii.append((i,t))
+        else:
+            ii.append(i)
+        i = s.find(pattern, i+1)
+    return ii    
+
+# **************************************************************************************
+# Wrapper: allows calling findall with a list of patterns 
+# (by replacement, i.e. the string fragments can be modified)
+def findall_patterns(patterns, s0, region=True, n=30, nback=-1, pattern2='', ignoreCase=True):
+    if type(patterns) != list:
+        # prepare for usual call 
+        pattern = patterns
+        s = s0
+    else:
+        # Replace in s all other patterns with the 0th pattern and then call
+        pattern = patterns[0]
+        s = s0
+        for p in patterns[1:]:
+            s = s.replace(p,pattern)
+    return findall(pattern=pattern, s=s, region=region, n=n, nback=nback, pattern2=pattern2, ignoreCase=ignoreCase)    

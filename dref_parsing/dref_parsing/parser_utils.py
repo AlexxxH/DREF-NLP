@@ -37,86 +37,6 @@ class ExceptionNoURLforPDF(Exception):
     "URL for PDF file is not available (with API appeal_document call)"
 
 # ****************************************************************************************
-# Finding Text
-# ****************************************************************************************
-
-# Alternative findall can be done using:
-# https://docs.python.org/3/library/re.html
-# http://www.learningaboutelectronics.com/Articles/How-to-search-for-a-case-insensitive-string-in-text-Python.php
-
-# import re
-# re.finditer(pattern, s, flags=re.IGNORECASE)
-#>>> text = "He was carefully disguised but captured quickly by police."
-#>>> for m in re.finditer(r"\w+ly", text):
-#...     print('%02d-%02d: %s' % (m.start(), m.end(), m.group(0)))
-#07-16: carefully
-#40-47: quickly
-
-# ****************************************************
-# Simple case-sensitive version, not used anymore
-def findall0(pattern, s, region=True, n=30, nback=-1, pattern2=''):
-    if nback<0: nback=n
-    ii = []
-    i = s.find(pattern)
-    while i != -1:
-        if region:
-            t = s[i-nback : i+n]
-            if pattern2!='' and t.count(pattern2)>0:
-                t = t.split(pattern2)[0]
-            ii.append((i,t))
-        else:
-            ii.append(i)
-        i = s.find(pattern, i+1)
-    return ii
-
-# ****************************************************
-# Finds all positions of the pattern p in the string s,
-# if region=True also outputs the next n chars (and previous nback chars) 
-# The text output is cut at pattern2
-def findall(pattern, s, region=True, n=30, nback=-1, pattern2='', ignoreCase=True):
-
-    if nback<0: nback=n
-    ii = []
-    if ignoreCase:
-        i = s.lower().find(pattern.lower())
-    else:
-        i = s.find(pattern)
-    while i != -1:
-        if region:
-            t = s[max(0,i-nback) : i+n]   
-            
-            # Stop string at pattern2
-            
-            if pattern2 != '':
-                if ignoreCase: index2 = t.lower().find(pattern2.lower())
-                else:          index2 = t.find(pattern2)
-                if index2 != -1:
-                    t = t[:index2]
-
-            ii.append((i,t))
-        else:
-            ii.append(i)
-        i = s.find(pattern, i+1)
-    return ii    
-
-# **************************************************************************************
-# Wrapper: allows calling findall with a list of patterns 
-# (by replacement, i.e. the string fragments can be modified)
-def findall_patterns(patterns, s0, region=True, n=30, nback=-1, pattern2='', ignoreCase=True):
-    if type(patterns) != list:
-        # prepare for usual call 
-        pattern = patterns
-        s = s0
-    else:
-        # Replace in s all other patterns with the 0th pattern and then call
-        pattern = patterns[0]
-        s = s0
-        for p in patterns[1:]:
-            s = s.replace(p,pattern)
-    return findall(pattern=pattern, s=s, region=region, n=n, nback=nback, pattern2=pattern2, ignoreCase=ignoreCase)    
-
-
-# ****************************************************************************************
 # GLOBAL / API
 # ****************************************************************************************
 
@@ -409,7 +329,7 @@ def are_there_only_spaces_before_LB(s):
 def find_sections_classic(txt):
 
     # Find text that precedes classic section_markers
-    prs = findall_patterns(section_markers, txt, region=True, n=0, nback=100)
+    prs = utils.findall_patterns(section_markers, txt, region=True, n=0, nback=100)
 
     # Several markers can come close to each other, 
     # e.g. 'People reached' & 'People targeted'
@@ -428,7 +348,7 @@ def find_sections_classic(txt):
 def find_sections_strategy(txt):
 
     # Later sections that all correspond to 'Strategy' Sector
-    prs = findall_patterns(strategy_sections, txt, region=True, n=0, nback=100)
+    prs = utils.findall_patterns(strategy_sections, txt, region=True, n=0, nback=100)
 
     # Section Title is always preceeded by linebreak & possibly spaces after it.
     # If not, these are not sections (just plain text), exclude them
@@ -443,7 +363,7 @@ def find_sections_strategy(txt):
 def find_sections_new(txt):
     # find what precedes pattern
     patterns = ["reached"]
-    prs = findall_patterns(patterns, txt, region=True, n=0, nback=100)
+    prs = utils.findall_patterns(patterns, txt, region=True, n=0, nback=100)
 
     # keep only if the previous line (or previous word) is 'Persons'
     prs = [pr for pr in prs if utils.get_bottom_line(pr[1], drop_spaces=True)=='Persons']
@@ -712,11 +632,11 @@ def get_CHs_from_text(txt):
                 '\nChallenges \n', '\n\n Challenges']
     keyword = '\nChallenges'
     
-    chs = findall_patterns(patterns, txt, region=True, n=50000, nback=5, pattern2='\nLessons ') 
+    chs = utils.findall_patterns(patterns, txt, region=True, n=50000, nback=5, pattern2='\nLessons ') 
     
     # The approach below doesn't work so well because sometimes there are only 2 linebreaks between CHs and LLs
     #txt2 = drop_spaces_between_linebreaks(txt)   
-    #chs = findall_patterns(patterns, txt2, region=True, n=2550, nback=0, pattern2='\n\n\n') 
+    #chs = utils.findall_patterns(patterns, txt2, region=True, n=2550, nback=0, pattern2='\n\n\n') 
 
     # Leave only text after the word "Challenges"
     #chs = [(ch[0], ch[1].split(keyword)[1]) for ch in chs] 
@@ -1047,7 +967,7 @@ def stop_at_capital(lls):
 # Finds LL-section from the text    
 def get_LLs_from_text(txt):
     pattern0 = '\nLessons'
-    lls = findall_patterns(pattern0, txt, region=True, n=7000, nback=0)
+    lls = utils.findall_patterns(pattern0, txt, region=True, n=7000, nback=0)
     lls = [(ll[0], strip_LL_section_start(ll[1])) for ll in lls]
     lls = [(ll[0], avoid_pagebreak       (ll[1])) for ll in lls]
     lls = [(ll[0], finish_LL_section     (ll[1])) for ll in lls]
@@ -1131,7 +1051,7 @@ def cut_footers(txt, footer, n=300, after='', before=''):
     if len(footer)<=1: return txt
   
     txt_out = txt
-    cc = findall(footer, txt, region=True, n=n, ignoreCase=False)
+    cc = utils.findall(footer, txt, region=True, n=n, ignoreCase=False)
     # Loop over footers, start from the end so that indices are not changed
     # when later footers are removed
     for c in cc[::-1]:
@@ -1173,7 +1093,7 @@ def cut_footers(txt, footer, n=300, after='', before=''):
 # Let's include them in the header if they are present for all pages
 def extend_header_with_linebreaks(header, txt):
 
-    cc = findall(header, txt, region=True, n=30, ignoreCase=False)    
+    cc = utils.findall(header, txt, region=True, n=30, ignoreCase=False)    
     
     lbs = [] # how many linebreaks preceed the header at each page
     for c in cc:
@@ -1285,16 +1205,16 @@ def drop_image_caption_one(a, pattern = '(Photo:'):
     if a.count(pattern)==0:
         return a
     # Find where the pattern occurs, and the caption ends
-    i0 = findall(pattern, a)[0][0]
+    i0 = utils.findall(pattern, a)[0][0]
     if a[i0:].count('\n\n')==0:
         end_caption = len(a)
     else:
-        end_caption = i0 + findall('\n\n', a[i0:])[0][0]
+        end_caption = i0 + utils.findall('\n\n', a[i0:])[0][0]
     
     # Search for double linebreaks backwards.
     # Choose those that are followed by a sentence start.
     # It gives the start of the caption
-    dlbs = findall('\n\n', a[:i0])
+    dlbs = utils.findall('\n\n', a[:i0])
     start_caption = 0
     for dlb in dlbs[::-1]:
         txt_after_dlb = a[dlb[0]:][:20]
