@@ -100,7 +100,21 @@ def drop_spaces_between_linebreaks(txt):
         out = out.replace('\n   \n','\n\n')
         out = out.replace('\n    \n','\n\n')
         out = out.replace('\n     \n','\n\n')
-    return out    
+    return out
+
+# split a string into list of words
+def get_words_from_string(s):
+    ww = s.lower().split(' ')
+    ww = [w.strip('-').strip(' ') for w in ww]
+    ww = [w for w in ww if w!='']
+    return ww 
+
+# Finds common words in 2 strings
+def get_common_words(s1,s2):
+    w1 = get_words_from_string(s1)
+    w2 = get_words_from_string(s2)
+    common = set(w1).intersection(set(w2))
+    return common
 
 # ****************************************************************************************
 # Finding Text
@@ -179,4 +193,4 @@ def findall_patterns(patterns, s0, region=True, n=30, nback=-1, pattern2='', ign
         s = s0
         for p in patterns[1:]:
             s = s.replace(p,pattern)
-    return findall(pattern=pattern, s=s, region=region, n=n, nback=nback, pattern2=pattern2, ignoreCase=ignoreCase)    
+    return findall(pattern=pattern, s=s, region=region, n=n, nback=nback, pattern2=pattern2, ignoreCase=ignoreCase)
