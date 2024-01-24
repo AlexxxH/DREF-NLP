@@ -15,6 +15,8 @@ import pdfminer.high_level
 from pdfminer.high_level import extract_pages
 from pdfminer.layout import LTTextContainer, LTImage, LTFigure, LTTextBox, LTTextBoxHorizontal
 
+from dref_parsing import utils
+
 pbflag = '!!!Page_Break!!!'
 all_bullets = ['•','●','▪','-']
 
@@ -38,22 +40,10 @@ class ExceptionNoURLforPDF(Exception):
 # STRING OPERATIONS
 # ****************************************************************************************
 
-# Is char a digit 0-9?
-def is_digit(c):
-    return c >= '0' and c<='9'
-
-# If char is neither lower or upper case, it is not a letter
-def is_char_a_letter(c):
-    return c.islower() or c.isupper()
-
-# removes all given symbols from a string
-def remove_symbols(s, symbols=[' ']):
-    return ''.join([c for c in s if not c in symbols])
-
 # get the bottom line, i.e. text after the last linebreak
 def get_bottom_line(s, drop_spaces=False, drop_empty=True):
     if drop_spaces:
-        s = remove_symbols(s, symbols=[' '])
+        s = utils.remove_symbols(s, symbols=[' '])
     lines = s.split('\n')
     if drop_empty:
         lines = [line for line in lines if line.strip(' ')!='']
@@ -63,9 +53,9 @@ def get_bottom_line(s, drop_spaces=False, drop_empty=True):
 def exist_two_letters_in_a_row(ch):
     if len(ch)<2:
         return False
-    is_previous_letter = is_char_a_letter(ch[0])
+    is_previous_letter = utils.is_char_a_letter(ch[0])
     for c in ch[1:]:
-        is_current_letter = is_char_a_letter(c)
+        is_current_letter = utils.is_char_a_letter(c)
         if is_previous_letter and is_current_letter:
             return True
         is_previous_letter = is_current_letter
@@ -541,7 +531,7 @@ def find_sections_new(txt):
         # keep what's after multiple linebreaks
         s = s[s.rfind("\n\n\n"):]
         # remove linebreaks
-        s = remove_symbols(s, symbols=['\n']).strip(' ')
+        s = utils.remove_symbols(s, symbols=['\n']).strip(' ')
 
         # Save string back to tuple:
         prs_processed.append( (pr[0], s) )
@@ -684,7 +674,7 @@ def split_text_by_separator(cc0, seps = ['\n\n'], bullets=['\n●','\n•','\n-'
 # If it looks like smth different, e.g. a typical heading,
 # then it is not an excerpt
 def reject_excerpt(cc):
-    if cc.count('Output')>0 and has_digit_dot_digit(cc):
+    if cc.count('Output')>0 and utils.has_digit_dot_digit(cc):
         # it is typical heading
         return True
     if cc.count('\nOutcome 1')>0 or cc.count('\nOutcome 2')>0:
@@ -1171,29 +1161,6 @@ def get_header_footer_candidates(filename = "../data/PDF-2020/MDRCD030dfr.pdf"):
     return headers, footers, postheaders    
 
 #***************************************************************
-# Returns substring preceeding a number
-def before_number(s):
-    for i in range(len(s)):
-        if is_digit(s[i]):
-            return s[:i]
-    return s
-
-# Returns substring after a number
-def after_number(s):
-    for i in range(len(s)-1,-1,-1): 
-        if is_digit(s[i]):
-            return s[i+1:]
-    return s
-
-# Does it have substrings like '1.5', typical for section numbers
-def has_digit_dot_digit(s):
-    for i in range(len(s)-2):
-        if is_digit(s[i]):
-            if (s[i+1]=='.') and is_digit(s[i+2]):
-                return True
-    return False
-
-#***************************************************************
 # Out of many footer-candidates (which are simply the last text elements on a page)
 # finds one that repeats more than threshold 
 def repeatable_element(footers0, threshold=0.5, numbers=''):
@@ -1201,9 +1168,9 @@ def repeatable_element(footers0, threshold=0.5, numbers=''):
     if numbers == '':
         footers = footers0
     if numbers == 'stop_before':
-        footers = [before_number(f) for f in footers0]
+        footers = [utils.before_number(f) for f in footers0]
     if numbers == 'stop_after':
-        footers = [after_number(f) for f in footers0]
+        footers = [utils.after_number(f) for f in footers0]
         
     vc = pd.DataFrame({'footer':footers}).footer.value_counts()
     if vc[0] > threshold * len(footers):
