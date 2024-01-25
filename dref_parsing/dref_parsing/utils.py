@@ -51,19 +51,11 @@ def exist_two_letters_in_a_row(ch):
             return True
     return False
 
-# Strip string of special symbols and sequences (from beginning & end)
-def strip_all(s, left=True, right=True):
-    symbols=[' ','\n']+list(all_bullets)
-    start_sequences = ['.','1.','2.','3.','4.','5.','6.','7.','8.','9.']
-    
-    for i in range(20):
-        for symb in symbols:
-            if left:  s = s.lstrip(symb)
-            if right: s = s.rstrip(symb)
-            
-        for seq in start_sequences:
-            if s.startswith(seq):
-                s = s[len(seq):]
+# Strip space and bullets from beginning and end, and strip 1., 2., etc from beginning
+def strip_all(s):
+    s = s.strip(''.join(all_bullets))
+    s = re.sub("^([\s.•●▪-]*(\.|[0-9]\.)*)+", "", s)
+
     return s
 
 # Return bullet char if the string starts with a bullet.
@@ -89,11 +81,11 @@ def drop_spaces_between_linebreaks(txt):
 # ****************************************************
 # Finds all positions of the pattern p in the string s,
 # if region=True also outputs the next n chars (and previous nback chars) 
-# The text output is cut at pattern2
-def findall(pattern, s, n=30, nback=-1, pattern2='', ignore_case=True):
+# The text output is cut at stop_pattern
+def findall(pattern, s, n=30, nback=-1, stop_pattern=None, ignore_case=True):
     """
     Find all occurrences of pattern in string s.
-    Get the text block surrounding each pattern, of size determined by n and nback. Break the textblock at pattern2.
+    Get the text block surrounding each pattern, of size determined by n and nback. Break the textblock at stop_pattern.
     Return a list of lists, where each element of the list contains the index of the found pattern, and the text block surrounding it (size determined by n and nback).
 
     Parameters
@@ -110,8 +102,8 @@ def findall(pattern, s, n=30, nback=-1, pattern2='', ignore_case=True):
     nback : int (default=-1)
         Number of characters behind the found pattern to return in padding.
 
-    pattern2 : string (default='')
-        Break the textblock at the position of pattern2.
+    stop_pattern : string (default=None)
+        Break the textblock at the position of stop_pattern.
 
     ignore_case : bool (default=True)
         If True, run the pattern search ignoring case.
@@ -130,10 +122,10 @@ def findall(pattern, s, n=30, nback=-1, pattern2='', ignore_case=True):
         # Get text block around found pattern
         text_block = s[max(0, i-nback) : i+n]
 
-        # Cut text block at pattern2
-        if pattern2 != '':
+        # Cut text block at stop_pattern
+        if stop_pattern is not None:
             index2 = find_ignore_case(
-                value = pattern2, 
+                value = stop_pattern, 
                 string = text_block,
                 ignore_case = ignore_case
             )
@@ -306,31 +298,6 @@ def reject_excerpt(cc):
 # ****************************************************************************************
 # Locate & Process Challenges
 # ****************************************************************************************
-
-# Skip challenge when it is basically absent
-def skip_ch(ch): 
-    if len(ch)<3:
-        return True
-    if not exist_two_letters_in_a_row(ch):
-        return True
-    if strip_all(ch).startswith('None') and (len(ch)<30):
-        return True
-    if strip_all(ch).startswith('Nothing') and (len(ch)<30):
-        return True
-    if ch.startswith('No challenge') and (len(ch)<30):
-        return True
-    if ch.startswith('No lesson') and (len(ch)<30):
-        return True
-    if ch.startswith('Not applicable') and (len(ch)<30):
-        return True
-    if ch.strip(' \n.').lower() in ['none', 'n/a']:
-        return True
-    if ch.startswith('Similar challenges as') and (len(ch)<70):
-        return True
-    if ch.strip(' \n\t').startswith('Not enough reporting') and (len(ch)<105):
-        return True
-    return False
-
 
 # True if there is no text (except possibly spaces) when searching for LB backwards
 def are_there_only_spaces_before_LB(s):

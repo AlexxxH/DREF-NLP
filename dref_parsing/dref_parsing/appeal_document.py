@@ -260,18 +260,22 @@ class AppealDocument:
             s = utils.replace_texts(patterns[1:], patterns[0], self.content),
             n = 50000, 
             nback = 5, 
-            pattern2 = '\nLessons '
+            stop_pattern = '\nLessons '
         )
 
-        # Leave only text after the word "Challenges"
-        keyword = '\nChallenges'
-        chs = [(ch[0], ch[1][len(ch[1].split(keyword)[0])+len(keyword):]) for ch in chs]
+        # Leave only text after the title "Challenges"
+        def get_text_after_title(text):
+            title = '\nChallenges'
+            text_before_title = text.split(title)[0]
+            length_text_up_to_title = len(text_before_title)+len(title)
+            return text[length_text_up_to_title:]
+        chs = [(ch[0], get_text_after_title(ch[1])) for ch in chs]
 
         # We must stop the fragment at linebreaks if:
         # 1. CH fragments overlap (i.e. LL section is missing)
         # 2. fragment is too long
         # 3. fragment is quite long and likely to stop at LBs
-        for i,ch in enumerate(chs):
+        for i, ch in enumerate(chs):
             overlaps_next = (i+1 < len(chs)) and (ch[0] + len(ch[1]) > chs[i+1][0])
             too_long = len(ch[1])>3500
             quite_long = len(ch[1])>1000
@@ -286,18 +290,23 @@ class AppealDocument:
 
 
     def get_LLs_from_text(self):
+        # Get the lessons learned section
         lls = utils.findall(
             pattern = '\nLessons', 
             s = self.content, 
             n = 7000, 
             nback = 0
         )
-        lls = [(ll[0], self.strip_LL_section_start(ll[1])) for ll in lls]
-        lls = [(ll[0], self.avoid_pagebreak(ll[1])) for ll in lls]
-        lls = [(ll[0], self.finish_LL_section(ll[1])) for ll in lls]
-        lls = [ll for ll in lls if ll[1]!='']
 
-        lls = self.split_and_clean_CHLL(lls)
+        # Tidy the lessons learned
+        lls_tidy = []
+        for ll in lls:
+            ll_text = self.strip_LL_section_start(ll[1])
+            ll_text = self.avoid_pagebreak(ll_text)
+            ll_text = self.finish_LL_section(ll_text)
+            if ll_text != '':
+                lls_tidy.append((ll[0], ll_text))
+        lls = self.split_and_clean_CHLL(lls_tidy)
 
         # If we have a list item with only capital letters,
         # this element and all sunsequent elements are excluded
@@ -560,28 +569,24 @@ class AppealDocument:
 
     # Splits CH (or LL) section into separate CHs, and cleans 
     def split_and_clean_CHLL(self, chs):
-        # Strip away extra symbols
-        chs = [(ch[0], ch[1].strip('\n ')) for ch in chs] 
-        
-        # Remove what looks like an image caption
-        chs = [(ch[0], utils.drop_image_caption(ch[1])) for ch in chs] 
+
+        # Remove symbols and image caption
+        chs = [(ch[0], utils.drop_image_caption(ch[1].strip('\n '))) for ch in chs]
 
         # Split into challenges (based mainly on double-linebreaks)
         chs = utils.split_list_by_separator(chs)
-        chs = [(ch[0], utils.strip_all(ch[1])) for ch in chs] 
 
-        # Remove "N/A" etc indicating absence of challenges
-        chs = [ch for ch in chs if not utils.skip_ch(ch[1])]
-
-        # Remove too short ones
-        chs = [ch for ch in chs if len(ch[1])>5]
-
-        # Remove linebreaks (only single linbreaks are left)
-        chs = [(ch[0], ch[1].replace('\n','')) for ch in chs]
-
-        # Remove double spaces
-        chs = [(ch[0], ch[1].replace('  ',' ').replace('  ',' ')) for ch in chs]
-        return chs  
+        # Tidy the challenges and skip some
+        tidy_chs = []
+        for ch in chs:
+            ch_text = utils.strip_all(ch[1])
+            if self.skip_ch(ch_text) or len(ch_text)<=5:
+                continue
+            ch_text = ch_text.replace('\n', '')
+            ch_text = re.sub(' +', ' ', ch_text)
+            tidy_chs.append((ch[0], ch_text))
+        
+        return tidy_chs
 
     # In some cases a multiple linebreak means the end
     # of Challenge section, e.g. if it contains 
@@ -593,7 +598,29 @@ class AppealDocument:
             return False
         s_before = s.split(stop)[0]
         s_after = s.split(stop)[1].split('\n\n')[0]
-        NA_challenge = utils.skip_ch(s_before.strip('\n '))
+        NA_challenge = self.skip_ch(s_before.strip('\n '))
         other_section_after = s_after.strip('\n ').startswith('Strategies for Implementation') 
         #TODO: add other section names e.g. Health, see CU006
         return NA_challenge or other_section_after
+
+
+    # Skip challenge when it is basically absent
+    def skip_ch(self, ch): 
+        if len(ch)<3:
+            return True
+        if not utils.exist_two_letters_in_a_row(ch):
+            return True
+        if ch.strip().strip('.').lower() in ['none', 'n/a']:
+            return True
+
+        # Skip if starts with something irrelevent, and not too long
+        bad_starts = ['None', 'Nothing', 'No challenge', 'No lesson', 'Not applicable']
+        for bad_start in bad_starts:
+            if utils.strip_all(ch.strip()).startswith(bad_start) and (len(ch)<30):
+                return True
+        if ch.startswith('Similar challenges as') and (len(ch)<70):
+            return True
+        if ch.strip().startswith('Not enough reporting') and (len(ch)<105):
+            return True
+
+        return False
