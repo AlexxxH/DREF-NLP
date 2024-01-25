@@ -36,5 +36,5 @@ class TestResults(unittest.TestCase):
                 print(expected_results)
                 self.assertTrue(
                     expected_results.equals(results), 
-                    f'Results do not match expected results for MDR code {mdr_code}\n\n{expected_results.compare(results)}'
+                    f'Results do not match expected results for MDR code {mdr_code}\n\nResults:\n{results}\n\nExpected results:\n{expected_results}\n\nComparison:\n{expected_results.compare(results)}'
                 )
