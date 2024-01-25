@@ -23,16 +23,8 @@ async def run_parsing(
     for lead in test_mdr_codes:
         lead = f'MDR{lead}'
 
-        try:
-            all_parsed = parse_PDF_combined(lead)
-        except ExceptionNotInAPI:
-            raise HTTPException(status_code=404, 
-                                detail=f"{lead} doesn't have a DREF Final Report in IFRC GO appeal database")
-        except ExceptionNoURLforPDF:
-            raise HTTPException(status_code=404, 
-                                detail=f"PDF URL for Appeal code {lead} was not found using IFRC GO API call appeal_document")
-        except:
-            raise HTTPException(status_code=500, detail="PDF Parsing didn't work by some reason")
+        # Get old version
+        all_parsed = parse_PDF_combined(lead)
 
         # Get alex new
         def parse_PDF_combined_new(lead):
@@ -53,13 +45,14 @@ async def run_parsing(
         # Check if the same as old version
         results[lead] = all_parsed_new.equals(all_parsed)
         print(all_parsed_new)
+        print(all_parsed)
         print(f'{lead}: {("Pass" if results[lead] else "FAIL")}')
     
     if all(results.values()):
-        print(f"PASS for codes: {list(results.keys())}")
+        print(f"\n\nPASS for codes: {list(results.keys())}")
     else:
         failed_mdr_codes = [code for code in results if not(results[code])]
-        print(f"FAIL for codes: {failed_mdr_codes}")
+        print(f"\n\nFAIL for codes: {failed_mdr_codes}")
     
     return all(results)
 
