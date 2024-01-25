@@ -54,10 +54,6 @@ def exist_two_letters_in_a_row(ch):
         is_previous_letter = is_current_letter
     return False
 
-# Removes all text after the LAST occurence of pattern, including the pattern
-def rstrip_from(s, pattern):
-    return s[:s.rfind(pattern)]
-
 # Strip string from special symbols and sequences (from beginning & end)
 def strip_all(s, left=True, right=True, symbols=[' ','\n']+all_bullets, 
               start_sequences = ['.','1.','2.','3.','4.','5.','6.','7.','8.','9.']):

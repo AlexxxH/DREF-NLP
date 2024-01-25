@@ -368,11 +368,8 @@ class AppealDocument:
 
         prs_processed = []
         for pr in prs:
-            # Process string:
-            s = pr[1]
-
             # drop all text starting from 'Persons' 
-            s = utils.rstrip_from(s,'Persons')
+            s = s[:pr[1].rfind('Persons')]
 
             s = utils.strip_all_empty(s, left=False)
             s = utils.drop_spaces_between_linebreaks(s)
