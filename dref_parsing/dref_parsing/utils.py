@@ -90,33 +90,66 @@ def drop_spaces_between_linebreaks(txt):
 # Finds all positions of the pattern p in the string s,
 # if region=True also outputs the next n chars (and previous nback chars) 
 # The text output is cut at pattern2
-def findall(pattern, s, region=True, n=30, nback=-1, pattern2='', ignoreCase=True):
+def findall(pattern, s, n=30, nback=-1, pattern2='', ignore_case=True):
+    """
+    Find all occurrences of pattern in string s.
+    Get the text block surrounding each pattern, of size determined by n and nback. Break the textblock at pattern2.
+    Return a list of lists, where each element of the list contains the index of the found pattern, and the text block surrounding it (size determined by n and nback).
 
-    if nback<0: nback=n
+    Parameters
+    ----------
+    pattern : string (required)
+        String to search for.
+
+    s : string (required)
+        String to search for pattern in.
+
+    n : int (default = 30)
+        Number of characters in front of the found pattern to return in padding.
+
+    nback : int (default=-1)
+        Number of characters behind the found pattern to return in padding.
+
+    pattern2 : string (default='')
+        Break the textblock at the position of pattern2.
+
+    ignore_case : bool (default=True)
+        If True, run the pattern search ignoring case.
+    """
+    if nback<0: nback = n
     ii = []
-    if ignoreCase:
-        i = s.lower().find(pattern.lower())
-    else:
-        i = s.find(pattern)
+
+    i = find_ignore_case(
+        value = pattern,
+        string = s,
+        ignore_case = ignore_case
+    )
     
     while i != -1:
-        if region:
-            t = s[max(0, i-nback) : i+n]   
-            
-            # Stop string at pattern2
-            if pattern2 != '':
-                if ignoreCase: 
-                    index2 = t.lower().find(pattern2.lower())
-                else:
-                    index2 = t.find(pattern2)
-                if index2 != -1:
-                    t = t[:index2]
+        
+        # Get text block around found pattern
+        text_block = s[max(0, i-nback) : i+n]
 
-            ii.append((i,t))
-        else:
-            ii.append(i)
+        # Cut text block at pattern2
+        if pattern2 != '':
+            index2 = find_ignore_case(
+                value = pattern2, 
+                string = text_block,
+                ignore_case = ignore_case
+            )
+            if index2 != -1:
+                text_block = text_block[:index2]
+
+        ii.append((i, text_block))
         i = s.find(pattern, i+1)
+
     return ii
+
+
+def find_ignore_case(value, string, ignore_case, start=None, end=None):
+    if ignore_case:
+        return string.lower().find(value.lower(), start, end)
+    return string.find(value, start, end)
 
 #*********************************************************************************************
 # Removes a piece of text that presumably is an image caption 

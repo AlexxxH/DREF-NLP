@@ -182,6 +182,17 @@ class AppealDocument:
 
 
     def get_largest_repeating_footer(self, footers0, threshold=0.3):
+        """
+        Get the largest repeating footer, comparing the footer as it is, up to the first number, and after the last number.
+
+        Parameters
+        ----------
+        footers0 : list of string (required)
+            List of strings, representing the footer on each page.
+
+        threshold : float (default=0.3)
+            Threshold for counting the footer as "repeating" or not. E.g. if the threshold is 0.3, the footer must appear on 30% of pages to be considered repeating.
+        """
         output1 = self.get_repeating_footer(
             footers0=footers0, 
             threshold=threshold
@@ -207,7 +218,7 @@ class AppealDocument:
             return self.content
         
         pbflag = '!!!Page_Break!!!'
-        cc = utils.findall(footer, self.content, region=True, n=n, ignoreCase=False)
+        cc = utils.findall(footer, self.content, n=n, ignore_case=False)
         # Loop over footers, start from the end so that indices are not changed
         # when later footers are removed
         for c in cc[::-1]:
@@ -247,7 +258,6 @@ class AppealDocument:
         chs = utils.findall(
             pattern = patterns[0], 
             s = utils.replace_texts(patterns[1:], patterns[0], self.content),
-            region=True, 
             n = 50000, 
             nback = 5, 
             pattern2 = '\nLessons '
@@ -279,7 +289,6 @@ class AppealDocument:
         lls = utils.findall(
             pattern = '\nLessons', 
             s = self.content, 
-            region = True, 
             n = 7000, 
             nback = 0
         )
@@ -335,7 +344,6 @@ class AppealDocument:
         prs = utils.findall(
             pattern = section_markers[0], 
             s = utils.replace_texts(section_markers[1:], section_markers[0], self.content), 
-            region = True, 
             n = 0, 
             nback = 100
         )
@@ -366,7 +374,6 @@ class AppealDocument:
         prs = utils.findall(
             pattern = strategy_sections[0], 
             s = utils.replace_texts(strategy_sections[1:], strategy_sections[0], self.content), 
-            region = True, 
             n = 0, 
             nback = 100
         )
@@ -388,7 +395,6 @@ class AppealDocument:
         prs = utils.findall(
             pattern = "reached", 
             s = self.content, 
-            region = True,
             n = 0, 
             nback = 100
         )
