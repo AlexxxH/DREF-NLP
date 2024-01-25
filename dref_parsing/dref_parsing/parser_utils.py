@@ -2,6 +2,7 @@ import pandas as pd
 import numpy as np
 import sys
 import io
+import re
 import glob
 import requests
 from ast import literal_eval
@@ -340,7 +341,7 @@ def find_sections_classic(txt):
 
     # Take only the bottom line of the text (search for LB backward)
     # assuming that the last line before the marker is section name
-    prs = [(pr[0], utils.get_bottom_line(pr[1])) for pr in prs]
+    prs = [(pr[0], get_bottom_line(pr[1])) for pr in prs]
     return prs
 
 # ---------------------------------------------------------------
@@ -399,6 +400,26 @@ def findall(pattern, s, region=True, n=30, nback=-1, pattern2='', ignoreCase=Tru
         i = s.find(pattern, i+1)
     return ii    
 
+# get the bottom line, i.e. text after the last linebreak
+def get_bottom_line(s, drop_spaces=False, drop_empty=True):
+    if drop_spaces:
+        s = remove_symbols(s, symbols=[' '])
+    lines = s.split('\n')
+    if drop_empty:
+        lines = [line for line in lines if line.strip(' ')!='']
+    return lines[-1]
+
+# Removes all text after the LAST occurence of pattern, including the pattern
+def rstrip_from(s, pattern):
+    return s[:s.rfind(pattern)]
+
+def drop_spaces_between_linebreaks(txt):
+    return re.sub('\n[ \t]+\n', '\n\n', txt)
+
+# removes all given symbols from a string
+def remove_symbols(s, symbols=[' ']):
+    return ''.join([c for c in s if not c in symbols])
+
 # --------------------------------------------------------------
 # Sections for the new template
 def find_sections_new(txt):
@@ -407,7 +428,7 @@ def find_sections_new(txt):
     prs = findall_patterns(patterns, txt, region=True, n=0, nback=100)
 
     # keep only if the previous line (or previous word) is 'Persons'
-    prs = [pr for pr in prs if utils.get_bottom_line(pr[1], drop_spaces=True)=='Persons']
+    prs = [pr for pr in prs if get_bottom_line(pr[1], drop_spaces=True)=='Persons']
 
     prs_processed = []
     for pr in prs:
@@ -415,15 +436,15 @@ def find_sections_new(txt):
         s = pr[1]
 
         # drop all text starting from 'Persons' 
-        s = utils.rstrip_from(s,'Persons')
+        s = rstrip_from(s,'Persons')
 
-        s = utils.strip_all_empty(s, left=False)
-        s = utils.drop_spaces_between_linebreaks(s)
+        s = strip_all_empty(s, left=False)
+        s = drop_spaces_between_linebreaks(s)
 
         # keep what's after multiple linebreaks
         s = s[s.rfind("\n\n\n"):]
         # remove linebreaks
-        s = utils.remove_symbols(s, symbols=['\n']).strip(' ')
+        s = remove_symbols(s, symbols=['\n']).strip(' ')
 
         # Save string back to tuple:
         prs_processed.append( (pr[0], s) )
@@ -494,10 +515,27 @@ def is_smth_strange(s1, s2, min_len = 10):
     return strange_end or too_short
 
 def is_sentence_end(s, endings=['.', '?', '!']):
-    s2 = utils.strip_all_empty(s, left=False)
+    s2 = strip_all_empty(s, left=False)
     if len(s2)==0:
         return False
     return s2[len(s2)-1] in endings   
+
+# Strip string from spaces and linebreaks
+def strip_all_empty(s, left=True, right=True):
+    return strip_all(s, left=left, right=right, symbols=[' ','\n'], start_sequences = [])  
+
+# Strip string from special symbols and sequences (from beginning & end)
+def strip_all(s, left=True, right=True, symbols=[' ','\n']+all_bullets, 
+              start_sequences = ['.','1.','2.','3.','4.','5.','6.','7.','8.','9.']):
+    for i in range(20):
+        for symb in symbols:
+            if left:  s = s.lstrip(symb)
+            if right: s = s.rstrip(symb)
+            
+        for seq in start_sequences:
+            if s.startswith(seq):
+                s = s[len(seq):]                
+    return s    
 
 # ****************************************************************************************
 # If the first char is upper-case
@@ -566,13 +604,25 @@ def split_text_by_separator(cc0, seps = ['\n\n'], bullets=['\n●','\n•','\n-'
 # If it looks like smth different, e.g. a typical heading,
 # then it is not an excerpt
 def reject_excerpt(cc):
-    if cc.count('Output')>0 and utils.has_digit_dot_digit(cc):
+    if cc.count('Output')>0 and has_digit_dot_digit(cc):
         # it is typical heading
         return True
     if cc.count('\nOutcome 1')>0 or cc.count('\nOutcome 2')>0:
         # it is typical heading
         return True
     return False
+
+# Does it have substrings like '1.5', typical for section numbers
+def has_digit_dot_digit(s):
+    for i in range(len(s)-2):
+        if is_digit(s[i]):
+            if (s[i+1]=='.') and is_digit(s[i+2]):
+                return True
+    return False
+
+def is_digit(c):
+    return c >= '0' and c<='9'
+
 
 # ****************************************************************************************
 # Loops over list and splits each element by separator(s)
@@ -600,16 +650,30 @@ def split_list_by_separator(chs, seps = ['\n\n','\n \n','\n  \n','\n   \n',
 # ****************************************************************************************
 # Locate & Process Challenges
 # ****************************************************************************************
+def is_char_a_letter(c):
+    return c.isalpha()
+
+# True if there exist at least 2 letters after each other, otherwise it's not a text
+def exist_two_letters_in_a_row(ch):
+    if len(ch)<2:
+        return False
+    is_previous_letter = is_char_a_letter(ch[0])
+    for c in ch[1:]:
+        is_current_letter = is_char_a_letter(c)
+        if is_previous_letter and is_current_letter:
+            return True
+        is_previous_letter = is_current_letter
+    return False
 
 # Skip challenge when it is basically absent
 def skip_ch(ch): 
     if len(ch)<3:
         return True
-    if not utils.exist_two_letters_in_a_row(ch):
+    if not exist_two_letters_in_a_row(ch):
         return True
-    if utils.strip_all(ch).startswith('None') and (len(ch)<30):
+    if strip_all(ch).startswith('None') and (len(ch)<30):
         return True
-    if utils.strip_all(ch).startswith('Nothing') and (len(ch)<30):
+    if strip_all(ch).startswith('Nothing') and (len(ch)<30):
         return True
     if ch.startswith('No challenge') and (len(ch)<30):
         return True
@@ -629,14 +693,14 @@ def skip_ch(ch):
 # Splits CH (or LL) section into separate CHs, and cleans 
 def split_and_clean_CHLL(chs):
     # Strip away extra symbols
-    chs = [(ch[0], utils.strip_all_empty(ch[1])) for ch in chs] 
+    chs = [(ch[0], strip_all_empty(ch[1])) for ch in chs] 
     
     # Remove what looks like an image caption
     chs = [(ch[0], drop_image_caption(ch[1])) for ch in chs] 
 
     # Split into challenges (based mainly on double-linebreaks)
     chs = split_list_by_separator(chs)
-    chs = [(ch[0], utils.strip_all(ch[1])) for ch in chs] 
+    chs = [(ch[0], strip_all(ch[1])) for ch in chs] 
 
     # Remove "N/A" etc indicating absence of challenges
     chs = [ch for ch in chs if not skip_ch(ch[1])]
@@ -655,14 +719,14 @@ def split_and_clean_CHLL(chs):
 # of Challenge section, e.g. if it contains 
 # only "N/A-like" text
 def stop_at_multiple_LBs(s0, stop='\n\n\n\n\n'):
-    s = utils.drop_spaces_between_linebreaks(s0)
+    s = drop_spaces_between_linebreaks(s0)
     i = s.find(stop)
     if i<0: # 'stop' was not found
         return False
     s_before = s.split(stop)[0]
     s_after = s.split(stop)[1].split('\n\n')[0]
-    NA_challenge = skip_ch(utils.strip_all_empty(s_before))
-    other_section_after = utils.strip_all_empty(s_after).startswith('Strategies for Implementation') 
+    NA_challenge = skip_ch(strip_all_empty(s_before))
+    other_section_after = strip_all_empty(s_after).startswith('Strategies for Implementation') 
     #TODO: add other section names e.g. Health, see CU006
     return NA_challenge or other_section_after
 
@@ -939,7 +1003,7 @@ def get_PDF_names_fresh(q):
 # We use one linebreak as pattern, to be safe, even though in 99% of cases
 # there is a double-linebreak after 'Lessons Learned'
 def strip_LL_section_start(s, start =  '\nLessons', pattern='\n'):
-    tmp = utils.drop_spaces_between_linebreaks(s.lstrip(start))
+    tmp = drop_spaces_between_linebreaks(s.lstrip(start))
     # text between '\nLessons' and first linebreak:
     before_LB = tmp.split(pattern)[0]
     before_LB_strip = before_LB.strip(' ').strip(':').strip(' ')
@@ -951,10 +1015,21 @@ def strip_LL_section_start(s, start =  '\nLessons', pattern='\n'):
     else:
         return ''
 
+# Return bullet char if the string starts with a bullet.
+# Otherwise - returns an empty string
+def starts_with_bullet(s0, bullets=all_bullets):
+    s = strip_all_empty(s0, right=False)
+    if len(s)==0:
+        return ''
+    if s[0] in bullets:
+        return s[0]
+    else:
+        return ''
+
 # LL section ends when we meet several linebreaks at once.
 # With some exceptions.
 def finish_LL_section(s, stop='\n\n\n'):
-    s2 = utils.drop_spaces_between_linebreaks(s)
+    s2 = drop_spaces_between_linebreaks(s)
     s2 = s2.lstrip('\n')    
     ss = s2.split(stop)
     # Often we stop at the first LBs
@@ -966,24 +1041,24 @@ def finish_LL_section(s, stop='\n\n\n'):
         ss = [s for s in ss if s!='']
 
     # This gives us the bullet type at the start (or '' if starts not with a bullet)
-    bullet = utils.starts_with_bullet(ss[0])
+    bullet = starts_with_bullet(ss[0])
 
     for i in range(1,len(ss)):
         if bullet != '':
             # if LL section started with a bullet
-            if utils.starts_with_bullet(ss[i], bullets=[bullet]) != '' :
+            if starts_with_bullet(ss[i], bullets=[bullet]) != '' :
                 # if we meet the same bullet, it must be continuation of LL section
                 output += stop + ss[i] 
                 continue 
         after_stop_before_LB = ss[i].split('\n')[0]
         # LL section is sometimes divided into subsections with typical title
-        if utils.strip_all_empty(after_stop_before_LB) == 'Recommendations':
+        if strip_all_empty(after_stop_before_LB) == 'Recommendations':
             # we skip this title word and continue LL section
             skip_symbols = len(after_stop_before_LB)
             output = output + stop + ss[i][skip_symbols:]
             continue
         # If ends with ':', it's not the end of LL section
-        if utils.strip_all_empty(output, left=False).endswith(":"):
+        if strip_all_empty(output, left=False).endswith(":"):
             output += stop + ss[i] 
             continue 
 
@@ -1036,7 +1111,7 @@ def get_header_footer_candidates(filename = "../data/PDF-2020/MDRCD030dfr.pdf"):
         for element in page_layout:
             if isinstance(element, LTTextContainer):
                 # ignoring empty elements
-                if utils.strip_all_empty(element.get_text()) != '':
+                if strip_all_empty(element.get_text()) != '':
                     element_text = element.get_text()
                     if postheader_now:
                         postheader = element_text
@@ -1060,15 +1135,29 @@ def repeatable_element(footers0, threshold=0.5, numbers=''):
     if numbers == '':
         footers = footers0
     if numbers == 'stop_before':
-        footers = [utils.before_number(f) for f in footers0]
+        footers = [before_number(f) for f in footers0]
     if numbers == 'stop_after':
-        footers = [utils.after_number(f) for f in footers0]
+        footers = [after_number(f) for f in footers0]
         
     vc = pd.DataFrame({'footer':footers}).footer.value_counts()
     if vc[0] > threshold * len(footers):
         return vc.index[0].rstrip('\n')
     else:
         return ''
+
+# Returns substring preceeding a number
+def before_number(s):
+    for i in range(len(s)):
+        if is_digit(s[i]):
+            return s[:i]
+    return s
+
+# Returns substring after a number
+def after_number(s):
+    for i in range(len(s)-1,-1,-1): 
+        if is_digit(s[i]):
+            return s[i+1:]
+    return s
 
 #***************************************************************
 # Footers or headers may include page number. This function figures out whether they do
@@ -1092,7 +1181,7 @@ def cut_footers(txt, footer, n=300, after='', before=''):
     if len(footer)<=1: return txt
   
     txt_out = txt
-    cc = utils.findall(footer, txt, region=True, n=n, ignoreCase=False)
+    cc = findall(footer, txt, region=True, n=n, ignoreCase=False)
     # Loop over footers, start from the end so that indices are not changed
     # when later footers are removed
     for c in cc[::-1]:
@@ -1134,7 +1223,7 @@ def cut_footers(txt, footer, n=300, after='', before=''):
 # Let's include them in the header if they are present for all pages
 def extend_header_with_linebreaks(header, txt):
 
-    cc = utils.findall(header, txt, region=True, n=30, ignoreCase=False)    
+    cc = findall(header, txt, region=True, n=30, ignoreCase=False)    
     
     lbs = [] # how many linebreaks preceed the header at each page
     for c in cc:
@@ -1193,13 +1282,13 @@ def remove_double_pbflag(c):
     splits = c.split(pbflag)
     splits_new = []
     for split in splits:
-        if utils.strip_all_empty(split)!='':
+        if strip_all_empty(split)!='':
             splits_new.append(split)
     return pbflag.join(splits_new)  
 
 # TODO: other bulets ???
 def is_same_bullet_type(c1, c2):
-    c2 = utils.strip_all_empty(c2, right=False)
+    c2 = strip_all_empty(c2, right=False)
     bullet = '• '
     if c1.startswith(bullet) and c2.startswith(bullet):
         return True
@@ -1220,12 +1309,12 @@ def avoid_pagebreak(c, stop='\n\n\n'):
     else:
         c1 = c.split(pbflag)[0]
         c2 = c.split(pbflag)[1]
-        if utils.strip_all_empty(c1).count(stop)>0:
+        if strip_all_empty(c1).count(stop)>0:
             # stops are found before pagebreak, hence ignore the next-page text
             cout = c1
         else:
             consistent = is_sentence_end(c1) == is_sentence_start(c2)
-            must_go_on = utils.strip_all_empty(c1, left=False)[-1]==':'
+            must_go_on = strip_all_empty(c1, left=False)[-1]==':'
             # NB: so far must_go_on is never used, i.e. can be dropped
             if consistent or must_go_on or c1=='':
                 # Looks like next-page text may be a continuation of previous-page
@@ -1233,8 +1322,8 @@ def avoid_pagebreak(c, stop='\n\n\n'):
                 if is_same_bullet_type(c1, c2):
                     # the same bullets used before and after, hence it's likely
                     # the same block of text, thus lets remove linebreaks coming from the pagebreak
-                    c1 = utils.strip_all_empty(c1, left=False)
-                    c2 = utils.strip_all_empty(c2, right=False)
+                    c1 = strip_all_empty(c1, left=False)
+                    c2 = strip_all_empty(c2, right=False)
                 cout = c1 + '\n\n' + c2
             else:
                 cout = c1
@@ -1246,16 +1335,16 @@ def drop_image_caption_one(a, pattern = '(Photo:'):
     if a.count(pattern)==0:
         return a
     # Find where the pattern occurs, and the caption ends
-    i0 = utils.findall(pattern, a)[0][0]
+    i0 = findall(pattern, a)[0][0]
     if a[i0:].count('\n\n')==0:
         end_caption = len(a)
     else:
-        end_caption = i0 + utils.findall('\n\n', a[i0:])[0][0]
+        end_caption = i0 + findall('\n\n', a[i0:])[0][0]
     
     # Search for double linebreaks backwards.
     # Choose those that are followed by a sentence start.
     # It gives the start of the caption
-    dlbs = utils.findall('\n\n', a[:i0])
+    dlbs = findall('\n\n', a[:i0])
     start_caption = 0
     for dlb in dlbs[::-1]:
         txt_after_dlb = a[dlb[0]:][:20]
