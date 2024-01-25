@@ -54,7 +54,7 @@ def exist_two_letters_in_a_row(ch):
         is_previous_letter = is_current_letter
     return False
 
-# Strip string from special symbols and sequences (from beginning & end)
+# Strip string of special symbols and sequences (from beginning & end)
 def strip_all(s, left=True, right=True, symbols=[' ','\n']+all_bullets, 
               start_sequences = ['.','1.','2.','3.','4.','5.','6.','7.','8.','9.']):
     for i in range(20):
@@ -64,17 +64,13 @@ def strip_all(s, left=True, right=True, symbols=[' ','\n']+all_bullets,
             
         for seq in start_sequences:
             if s.startswith(seq):
-                s = s[len(seq):]                
-    return s        
-
-# Strip string from spaces and linebreaks
-def strip_all_empty(s, left=True, right=True):
-    return strip_all(s, left=left, right=right, symbols=[' ','\n'], start_sequences = [])       
+                s = s[len(seq):]
+    return s
 
 # Return bullet char if the string starts with a bullet.
 # Otherwise - returns an empty string
 def starts_with_bullet(s0, bullets=all_bullets):
-    s = strip_all_empty(s0, right=False)
+    s = s0.lstrip('\n ')
     if len(s)==0:
         return ''
     if s[0] in bullets:
@@ -142,13 +138,13 @@ def remove_double_pbflag(c):
     splits = c.split(pbflag)
     splits_new = []
     for split in splits:
-        if strip_all_empty(split)!='':
+        if split.strip('\n ') != '':
             splits_new.append(split)
     return pbflag.join(splits_new)  
 
 # TODO: other bulets ???
 def is_same_bullet_type(c1, c2):
-    c2 = strip_all_empty(c2, right=False)
+    c2 = c2.lstrip('\n ')
     bullet = '• '
     if c1.startswith(bullet) and c2.startswith(bullet):
         return True
@@ -279,7 +275,7 @@ def is_sentence_start(s):
 
 
 def is_sentence_end(s, endings=['.', '?', '!']):
-    s2 = strip_all_empty(s, left=False)
+    s2 = s.rstrip('\n ')
     if len(s2)==0:
         return False
     return s2[len(s2)-1] in endings

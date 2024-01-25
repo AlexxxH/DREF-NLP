@@ -71,7 +71,7 @@ class AppealDocument:
             header_now = True
             for element in page_layout:
                 if isinstance(element, LTTextContainer):
-                    if utils.strip_all_empty(element.get_text()) != '':
+                    if element.get_text().strip('\n ') != '':
                         element_text = element.get_text()
 
                         if postheader_now:
@@ -371,7 +371,7 @@ class AppealDocument:
             # drop all text starting from 'Persons' 
             s = s[:pr[1].rfind('Persons')]
 
-            s = utils.strip_all_empty(s, left=False)
+            s = s.rstrip('\n ')
             s = utils.drop_spaces_between_linebreaks(s)
 
             # keep what's after multiple linebreaks
@@ -443,12 +443,12 @@ class AppealDocument:
         else:
             c1 = c.split(pbflag)[0]
             c2 = c.split(pbflag)[1]
-            if utils.strip_all_empty(c1).count(stop)>0:
+            if c1.strip('\n ').count(stop)>0:
                 # stops are found before pagebreak, hence ignore the next-page text
                 cout = c1
             else:
                 consistent = utils.is_sentence_end(c1) == utils.is_sentence_start(c2)
-                must_go_on = utils.strip_all_empty(c1, left=False)[-1]==':'
+                must_go_on = c1.rstrip('\n ')[-1]==':'
                 # NB: so far must_go_on is never used, i.e. can be dropped
                 if consistent or must_go_on or c1=='':
                     # Looks like next-page text may be a continuation of previous-page
@@ -456,8 +456,8 @@ class AppealDocument:
                     if utils.is_same_bullet_type(c1, c2):
                         # the same bullets used before and after, hence it's likely
                         # the same block of text, thus lets remove linebreaks coming from the pagebreak
-                        c1 = utils.strip_all_empty(c1, left=False)
-                        c2 = utils.strip_all_empty(c2, right=False)
+                        c1 = c1.rstrip('\n ')
+                        c2 = c2.lstrip('\n ')
                     cout = c1 + '\n\n' + c2
                 else:
                     cout = c1
@@ -506,13 +506,13 @@ class AppealDocument:
                     continue 
             after_stop_before_LB = ss[i].split('\n')[0]
             # LL section is sometimes divided into subsections with typical title
-            if utils.strip_all_empty(after_stop_before_LB) == 'Recommendations':
+            if after_stop_before_LB.strip('\n ') == 'Recommendations':
                 # we skip this title word and continue LL section
                 skip_symbols = len(after_stop_before_LB)
                 output = output + stop + ss[i][skip_symbols:]
                 continue
             # If ends with ':', it's not the end of LL section
-            if utils.strip_all_empty(output, left=False).endswith(":"):
+            if output.rstrip('\n ').endswith(":"):
                 output += stop + ss[i] 
                 continue 
 
@@ -527,7 +527,7 @@ class AppealDocument:
     # Splits CH (or LL) section into separate CHs, and cleans 
     def split_and_clean_CHLL(self, chs):
         # Strip away extra symbols
-        chs = [(ch[0], utils.strip_all_empty(ch[1])) for ch in chs] 
+        chs = [(ch[0], ch[1].strip('\n ')) for ch in chs] 
         
         # Remove what looks like an image caption
         chs = [(ch[0], utils.drop_image_caption(ch[1])) for ch in chs] 
@@ -559,8 +559,8 @@ class AppealDocument:
             return False
         s_before = s.split(stop)[0]
         s_after = s.split(stop)[1].split('\n\n')[0]
-        NA_challenge = skip_ch(utils.strip_all_empty(s_before))
-        other_section_after = utils.strip_all_empty(s_after).startswith('Strategies for Implementation') 
+        NA_challenge = skip_ch(s_before.strip('\n '))
+        other_section_after = s_after.strip('\n ').startswith('Strategies for Implementation') 
         #TODO: add other section names e.g. Health, see CU006
         return NA_challenge or other_section_after
 
