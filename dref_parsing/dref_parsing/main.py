@@ -1,3 +1,4 @@
+import requests
 from fastapi import FastAPI, Query, HTTPException
 
 from dref_parsing.parser_utils import *
@@ -116,15 +117,24 @@ async def run_parsing(
 @app.post("/refresh/")
 async def reload_GO_API_data():
     try:
-        initialize_apdo(refresh=True)
-        initialize_aadf(refresh=True)
+        # Get the total number of Appeals from GO API
+        response = requests.get(
+            url = "https://goadmin.ifrc.org/api/v2/appeal/",
+            params = {"format": "json", "limit": 1}
+        )
+        response.raise_for_status()
+        total_appeals = response.json()["count"]
 
-        # NB: we need to do import again, 
-        # otherwise updated apdo, aadf won't be accessible here
-        # (even though they got updated in parser_utils)
-        from dref_parsing.parser_utils import apdo, aadf
-        output = f'GO API Reload: {len(aadf)} items in appeal, {len(apdo)} items in appeal_documents'
-        output += ' (only DREF Final Reports are selected)'
+        # Get the total number of Appeals Documents from GO API
+        response = requests.get(
+            url = "https://goadmin.ifrc.org/api/v2/appeal_document/",
+            params = {"format": "json", "limit": 1}
+        )
+        response.raise_for_status()
+        total_appeal_documents = response.json()["count"]
+
+        output = f'GO API Reload: {total_appeals} items in appeal, {total_appeal_documents} items in appeal_documents (only DREF Final Reports are selected)'
+
     except:
         raise HTTPException(status_code=500, detail="Error while accessing GO API data")
     return output 
