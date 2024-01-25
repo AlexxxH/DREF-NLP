@@ -18,13 +18,10 @@ async def run_parsing(
     
     # Renaming: In the program we call it 'lead', while IFRC calls it 'Appeal_code'
     #lead = Appeal_code 
-    test_mdr_codes = ['DO013', 'BO014', 'CL014']
+    test_mdr_codes = ['DO013', 'BO014', 'CL014', 'AR017', 'VU008', 'TJ029', 'SO009', 'PH040', 'RS014', 'FJ004', 'CD031', 'MY005', 'LA007', 'CU006', 'AM006']
     results = {}
     for lead in test_mdr_codes:
         lead = f'MDR{lead}'
-
-        # Get old version
-        all_parsed = parse_PDF_combined(lead)
 
         # Get alex new
         def parse_PDF_combined_new(lead):
@@ -42,17 +39,25 @@ async def run_parsing(
             return all_parsed
         all_parsed_new = parse_PDF_combined_new(lead)
 
+        # Get old version
+        all_parsed = parse_PDF_combined(lead)
+
         # Check if the same as old version
         results[lead] = all_parsed_new.equals(all_parsed)
         print(all_parsed_new)
         print(all_parsed)
         print(f'{lead}: {("Pass" if results[lead] else "FAIL")}')
+        if not results[lead]:
+            compare = all_parsed.compare(all_parsed_new)
+            print(compare)
     
     if all(results.values()):
         print(f"\n\nPASS for codes: {list(results.keys())}")
     else:
         failed_mdr_codes = [code for code in results if not(results[code])]
-        print(f"\n\nFAIL for codes: {failed_mdr_codes}")
+        passed_mdr_codes = [code for code in results if results[code]]
+        print(f"\n\nPASS for codes: {failed_mdr_codes}")
+        print(f"\n\nFAIL for codes: {passed_mdr_codes}")
     
     return all(results)
 
