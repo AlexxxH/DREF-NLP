@@ -7,58 +7,6 @@ from dref_parsing.appeal import Appeal
 app = FastAPI()
 
 
-@app.post("/test/")
-async def run_parsing(
-    Appeal_code: str = Query(
-        'MDRDO013',
-        title="Appeal code",
-        description="Starts with 'MDR' followed by 5 symbols. <br> Some available codes: DO013, BO014, CL014, AR017, VU008, TJ029, SO009, PH040, RS014, FJ004, CD031, MY005, LA007, CU006, AM006",
-        min_length=8,
-        max_length=8)):
-    
-    # Renaming: In the program we call it 'lead', while IFRC calls it 'Appeal_code'
-    #lead = Appeal_code 
-    test_mdr_codes = ['DO013', 'BO014', 'CL014', 'AR017', 'VU008', 'TJ029', 'SO009', 'PH040', 'RS014', 'FJ004', 'CD031', 'MY005', 'LA007', 'CU006', 'AM006']
-    results = {}
-    for lead in test_mdr_codes:
-        lead = f'MDR{lead}'
-
-        # Get alex new
-        def parse_PDF_combined_new(lead):
-            appeal = Appeal(mdr_code=lead)
-            gf_parsed = {
-                'lead': lead,
-                'Hazard': appeal.official_hazard_name, 
-                'Country': appeal.country,
-                'Region': appeal.region,
-                'Date': appeal.start_date
-            }
-            dref_document = appeal.get_dref_final_report()
-            exs_parsed, _ = dref_document.get_challenges_lessons_learned()
-            all_parsed = exs_parsed.merge(pd.DataFrame([gf_parsed]), on='lead')
-            return all_parsed
-        all_parsed_new = parse_PDF_combined_new(lead)
-
-        # Get old version
-        all_parsed = parse_PDF_combined(lead)
-
-        # Check if the same as old version
-        results[lead] = all_parsed_new.equals(all_parsed)
-        print(all_parsed_new)
-        print(all_parsed)
-        print(f'{lead}: {("Pass" if results[lead] else "FAIL")}')
-        if not results[lead]:
-            compare = all_parsed.compare(all_parsed_new)
-            print(compare)
-            
-    failed_mdr_codes = [code for code in results if not(results[code])]
-    passed_mdr_codes = [code for code in results if results[code]]
-    print(f"\n\nPASS for codes: {failed_mdr_codes}")
-    print(f"\n\nFAIL for codes: {passed_mdr_codes}")
-    
-    return all(results)
-
-
 @app.post("/parse/")
 async def run_parsing(
     appeal_code: str = Query(
@@ -91,7 +39,7 @@ async def run_parsing(
     try:
         appeal = Appeal(mdr_code=appeal_code)
         appeal_data = pd.DataFrame([{
-            'lead': appeal_code,
+            'Appeal code': appeal_code,
             'Hazard': appeal.official_hazard_name, 
             'Country': appeal.country,
             'Region': appeal.region,
@@ -99,7 +47,7 @@ async def run_parsing(
         }])
         appeal_document = appeal.get_dref_final_report()
         exs_parsed, _ = appeal_document.get_challenges_lessons_learned()
-        all_parsed = exs_parsed.merge(appeal_data, on='lead')
+        all_parsed = exs_parsed.merge(appeal_data, on='Appeal code')
     except ExceptionNotInAPI:
         raise HTTPException(status_code=404, 
                             detail=f"{appeal_code} doesn't have a DREF Final Report in IFRC GO appeal database")
@@ -109,8 +57,7 @@ async def run_parsing(
     except:
         raise HTTPException(status_code=500, detail="PDF Parsing didn't work by some reason")
 
-    df = all_parsed[['Modified Excerpt', 'Learning', 'DREF_Sector', 'lead', 'Hazard', 'Country', 'Date', 'Region']]
-    df = df.rename(columns={'lead': 'Appeal code', 'Modified Excerpt': 'Excerpt'})
+    df = all_parsed[['Excerpt', 'Learning', 'DREF_Sector', 'Appeal code', 'Hazard', 'Country', 'Date', 'Region']]
 
     return df.to_dict()
 
