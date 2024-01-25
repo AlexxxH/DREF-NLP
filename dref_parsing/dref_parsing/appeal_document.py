@@ -23,7 +23,7 @@ class AppealDocument:
     Parameters
     ----------
     """
-    def __init__(self, created_at, document, document_url, appeal, document_type, iso, description, id, name, translation_module_original_language):
+    def __init__(self, id, name, created_at, document, document_url, appeal, iso, description=None, translation_module_original_language=None, document_type=None):
 
         # Set attributes from params
         self.created_at = created_at
