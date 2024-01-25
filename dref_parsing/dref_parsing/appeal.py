@@ -83,7 +83,7 @@ class Appeal:
         seps = [' - ','-',': ',':',' ']
         for sep in seps:
             try:
-                if title.count(sep)>0:
+                if sep in title:
                     splitted = title.split(sep,1)
                     return [t.strip(' ') for t in splitted]
             except:

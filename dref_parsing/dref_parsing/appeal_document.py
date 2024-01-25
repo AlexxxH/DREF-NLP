@@ -409,7 +409,7 @@ class AppealDocument:
             'health': 'Health'
         }
         for sector in sector_mapping:
-            if sector_name.lower().count(sector)>0: 
+            if sector in sector_name.lower():
                 return sector_mapping[sector]
 
         for sector in definitions.SECTORS:
@@ -436,14 +436,14 @@ class AppealDocument:
         pbflag = '!!!Page_Break!!!'
         c = re.sub(f'[\n ]*{pbflag}[\n ]*{pbflag}[\n ]*', pbflag, c)
 
-        if c.count(pbflag)==0:
+        if pbflag not in c:
             # if no pagebreaks, do nothing
             cout = c
 
         else:
             c1 = c.split(pbflag)[0]
             c2 = c.split(pbflag)[1]
-            if c1.strip('\n ').count(stop)>0:
+            if stop in c1.strip('\n '):
                 # stops are found before pagebreak, hence ignore the next-page text
                 cout = c1
             else:
