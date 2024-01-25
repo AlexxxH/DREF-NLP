@@ -117,19 +117,9 @@ def findall(pattern, s, region=True, n=30, nback=-1, pattern2='', ignoreCase=Tru
         else:
             ii.append(i)
         i = s.find(pattern, i+1)
-    return ii    
+    return ii
 
 # ************************************************************************
-# Helper functions for avoid_pagebreak
-def remove_double_pbflag(c):
-    pbflag = '!!!Page_Break!!!'
-    splits = c.split(pbflag)
-    splits_new = []
-    for split in splits:
-        if split.strip('\n ') != '':
-            splits_new.append(split)
-    return pbflag.join(splits_new)  
-
 # TODO: other bulets ???
 def is_same_bullet_type(c1, c2):
     c2 = c2.lstrip('\n ')

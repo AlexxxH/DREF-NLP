@@ -433,8 +433,8 @@ class AppealDocument:
 
     def avoid_pagebreak(self, c, stop='\n\n\n'):
         # Replaces possible double flags (from both header & footer) by one flag
-        c = utils.remove_double_pbflag(c)
         pbflag = '!!!Page_Break!!!'
+        c = re.sub(f'[\n ]*{pbflag}[\n ]*{pbflag}[\n ]*', pbflag, c)
 
         if c.count(pbflag)==0:
             # if no pagebreaks, do nothing
