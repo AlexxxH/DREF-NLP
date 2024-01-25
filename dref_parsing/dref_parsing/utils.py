@@ -98,15 +98,17 @@ def findall(pattern, s, region=True, n=30, nback=-1, pattern2='', ignoreCase=Tru
         i = s.lower().find(pattern.lower())
     else:
         i = s.find(pattern)
+    
     while i != -1:
         if region:
-            t = s[max(0,i-nback) : i+n]   
+            t = s[max(0, i-nback) : i+n]   
             
             # Stop string at pattern2
-            
             if pattern2 != '':
-                if ignoreCase: index2 = t.lower().find(pattern2.lower())
-                else:          index2 = t.find(pattern2)
+                if ignoreCase: 
+                    index2 = t.lower().find(pattern2.lower())
+                else:
+                    index2 = t.find(pattern2)
                 if index2 != -1:
                     t = t[:index2]
 
@@ -115,15 +117,6 @@ def findall(pattern, s, region=True, n=30, nback=-1, pattern2='', ignoreCase=Tru
             ii.append(i)
         i = s.find(pattern, i+1)
     return ii
-
-# ************************************************************************
-# TODO: other bulets ???
-def is_same_bullet_type(c1, c2):
-    c2 = c2.lstrip('\n ')
-    bullet = '• '
-    if c1.startswith(bullet) and c2.startswith(bullet):
-        return True
-    return False
 
 #*********************************************************************************************
 # Removes a piece of text that presumably is an image caption 

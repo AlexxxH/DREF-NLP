@@ -268,8 +268,17 @@ class AppealDocument:
         lls = [ll for ll in lls if ll[1]!='']
 
         lls = self.split_and_clean_CHLL(lls)
-        lls = self.stop_at_capital(lls)
-        return lls
+
+        # If we have a list item with only capital letters,
+        # this element and all sunsequent elements are excluded
+        # (capital letters means it's a section title rather than LL)
+        lls_filter = []
+        for ll in lls:
+            if ll[1].upper() == ll[1]:
+                break
+            lls_filter.append(ll)
+            
+        return lls_filter
 
 
     @cached_property
@@ -453,7 +462,7 @@ class AppealDocument:
                 if consistent or must_go_on or c1=='':
                     # Looks like next-page text may be a continuation of previous-page
                     # Thus, we shall append the next-page text
-                    if utils.is_same_bullet_type(c1, c2):
+                    if c1.startswith('• ') and c2.lstrip('\n ').startswith('• '):
                         # the same bullets used before and after, hence it's likely
                         # the same block of text, thus lets remove linebreaks coming from the pagebreak
                         c1 = c1.rstrip('\n ')
@@ -563,15 +572,3 @@ class AppealDocument:
         other_section_after = s_after.strip('\n ').startswith('Strategies for Implementation') 
         #TODO: add other section names e.g. Health, see CU006
         return NA_challenge or other_section_after
-
-
-    # If we have a list item with only capital letters,
-    # this element and all sunsequent elements are excluded
-    # (capital letters means it's a section title rather than LL)
-    def stop_at_capital(self, lls):
-        lls_new = []
-        for ll in lls:
-            if ll[1].upper() == ll[1]:
-                break
-            lls_new.append(ll)
-        return lls_new
