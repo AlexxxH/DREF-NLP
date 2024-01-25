@@ -3,14 +3,14 @@ import re
 all_bullets = ('•','●','▪','-')
 
 # Returns substring preceeding a number
-def before_number(s):
+def get_string_before_first_number(s):
     for i in range(len(s)):
         if s[i].isdigit():
             return s[:i]
     return s
 
 # Returns substring after a number
-def after_number(s):
+def get_string_after_last_number(s):
     for i in range(len(s)-1,-1,-1): 
         if s[i].isdigit():
             return s[i+1:]

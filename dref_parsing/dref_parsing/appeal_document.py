@@ -5,6 +5,7 @@ import io
 import re
 import copy
 import requests
+from collections import Counter
 from functools import cached_property
 
 import tika.parser
@@ -103,13 +104,13 @@ class AppealDocument:
 
         # Remove headers and footers
         document.remove_content(
-            document.repeatable_element_auto(document.headers_footers_postheaders['headers']), 
+            document.get_largest_repeating_footer(document.headers_footers_postheaders['headers']), 
             n=300,
             before = 'stop_at_linebreak', 
             after = 'stop_at_linebreak'
         )
         document.remove_content(
-            document.repeatable_element_auto(document.headers_footers_postheaders['footers']), 
+            document.get_largest_repeating_footer(document.headers_footers_postheaders['footers']), 
             n=300,
             before = 'stop_at_linebreak',
             after = 'stop_at_linebreak'
@@ -155,37 +156,57 @@ class AppealDocument:
         return exs_parsed, parsed
 
 
-    def repeatable_element(self, footers0, threshold=0.5, numbers=''):
+    def get_repeating_footer(self, footers0, threshold=0.5):
+        """
+        Find the footer which repeats the most between pages. 
+        If the footer is present on at least a percent of pages (defined by threshold), 
+        return it.
+
+        Parameters
+        ----------
+        footers0 : list of strings (required)
+            List of strings representing the footer on each page.
+
+        threshold : float (default 0.5)
+            Threshold where the most repeating footer is only returned if it exists on this percent of pages.
+        """        
+        # Check how often the footer repeats
+        value_counts = Counter(footers0)
+
+        # If it repeats above a threshold, return the footer text
+        most_common_element = value_counts.most_common(1)[0]
+        if most_common_element[1] > threshold * len(footers0):
+            return most_common_element[0].rstrip('\n')
         
-        if numbers == '':
-            footers = footers0
-        if numbers == 'stop_before':
-            footers = [utils.before_number(f) for f in footers0]
-        if numbers == 'stop_after':
-            footers = [utils.after_number(f) for f in footers0]
-            
-        vc = pd.DataFrame({'footer':footers}).footer.value_counts()
-        if vc[0] > threshold * len(footers):
-            return vc.index[0].rstrip('\n')
-        else:
-            return ''
+        return ''
 
 
-    def repeatable_element_auto(self, footers0, threshold=0.3):
-        output1 = self.repeatable_element(footers0=footers0, threshold=threshold, numbers='')
-        output2 = self.repeatable_element(footers0=footers0, threshold=threshold, numbers='stop_before')
-        output3 = self.repeatable_element(footers0=footers0, threshold=threshold, numbers='stop_after')
-        if len(output1)>len(output2) and len(output1)>len(output3):
-            return output1 
-        else:
-            return output2 if len(output2)>len(output3) else output3
+    def get_largest_repeating_footer(self, footers0, threshold=0.3):
+        output1 = self.get_repeating_footer(
+            footers0=footers0, 
+            threshold=threshold
+        )
+        output2 = self.get_repeating_footer(
+            footers0=[utils.get_string_before_first_number(f) for f in footers0.copy()], 
+            threshold=threshold
+        )
+        output3 = self.get_repeating_footer(
+            footers0=[utils.get_string_after_last_number(f) for f in footers0.copy()], 
+            threshold=threshold
+        )
+        if (len(output1) > len(output2)) and (len(output1) > len(output3)):
+            return output1
+        elif len(output2) > len(output3):
+            return output2
+        return output3
 
 
     def remove_content(self, footer, n=300, after='', before=''):
 
-        if len(footer)<=1: return self.content
+        if len(footer)<=1: 
+            return self.content
+        
         pbflag = '!!!Page_Break!!!'
-    
         cc = utils.findall(footer, self.content, region=True, n=n, ignoreCase=False)
         # Loop over footers, start from the end so that indices are not changed
         # when later footers are removed
