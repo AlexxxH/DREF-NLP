@@ -14,7 +14,7 @@ class TestResults(unittest.TestCase):
         test_mdr_codes = ['DO013', 'BO014', 'CL014', 'AR017', 'VU008', 'TJ029', 'SO009', 'PH040', 'RS014', 'FJ004', 'CD031', 'MY005', 'LA007', 'CU006', 'AM006']
 
         for i, mdr_code in enumerate(test_mdr_codes):
-            with self.subTest(mst=f'MDR {mdr_code}', i=i):
+            with self.subTest(msg=f'MDR {mdr_code}', i=i):
 
                 # Get MDR code parse results from API parse
                 response = requests.post(
