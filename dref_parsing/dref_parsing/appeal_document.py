@@ -245,7 +245,7 @@ class AppealDocument:
             too_long = len(ch[1])>3500
             quite_long = len(ch[1])>1000
             if overlaps_next or too_long or (quite_long and self.stop_at_multiple_LBs(ch[1])):
-                chs[i] = (ch[0], finish_LL_section(ch[1], stop='\n\n\n\n'))
+                chs[i] = (ch[0], self.finish_LL_section(ch[1], stop='\n\n\n\n'))
         
         chs = [(ch[0], self.avoid_pagebreak(ch[1])) for ch in chs]
         chs = [ch for ch in chs if ch[1]!='']
@@ -447,30 +447,28 @@ class AppealDocument:
 
         if pbflag not in c:
             # if no pagebreaks, do nothing
-            cout = c
+            return c
 
-        else:
-            c1 = c.split(pbflag)[0]
-            c2 = c.split(pbflag)[1]
-            if stop in c1.strip('\n '):
-                # stops are found before pagebreak, hence ignore the next-page text
-                cout = c1
-            else:
-                consistent = utils.is_sentence_end(c1) == utils.is_sentence_start(c2)
-                must_go_on = c1.rstrip('\n ')[-1]==':'
-                # NB: so far must_go_on is never used, i.e. can be dropped
-                if consistent or must_go_on or c1=='':
-                    # Looks like next-page text may be a continuation of previous-page
-                    # Thus, we shall append the next-page text
-                    if c1.startswith('• ') and c2.lstrip('\n ').startswith('• '):
-                        # the same bullets used before and after, hence it's likely
-                        # the same block of text, thus lets remove linebreaks coming from the pagebreak
-                        c1 = c1.rstrip('\n ')
-                        c2 = c2.lstrip('\n ')
-                    cout = c1 + '\n\n' + c2
-                else:
-                    cout = c1
-        return cout
+        c1 = c.split(pbflag)[0]
+        c2 = c.split(pbflag)[1]
+        # stops are found before pagebreak, hence ignore the next-page text
+        if stop in c1.strip('\n '):
+            return c1
+        if c1.rstrip('\n ') == '':
+            return c2
+        consistent = utils.is_sentence_end(c1) == utils.is_sentence_start(c2)
+        must_go_on = c1.rstrip('\n ')[-1]==':'
+        # NB: so far must_go_on is never used, i.e. can be dropped
+        if consistent or must_go_on or c1=='':
+            # Looks like next-page text may be a continuation of previous-page
+            # Thus, we shall append the next-page text
+            if c1.startswith('• ') and c2.lstrip('\n ').startswith('• '):
+                # the same bullets used before and after, hence it's likely
+                # the same block of text, thus lets remove linebreaks coming from the pagebreak
+                c1 = c1.rstrip('\n ')
+                c2 = c2.lstrip('\n ')
+            return c1 + '\n\n' + c2
+        return c1
 
 
     # Find where LL section starts, i.e. strip away its title (smth like 'Lessons Learned:\n')
@@ -568,7 +566,7 @@ class AppealDocument:
             return False
         s_before = s.split(stop)[0]
         s_after = s.split(stop)[1].split('\n\n')[0]
-        NA_challenge = skip_ch(s_before.strip('\n '))
+        NA_challenge = utils.skip_ch(s_before.strip('\n '))
         other_section_after = s_after.strip('\n ').startswith('Strategies for Implementation') 
         #TODO: add other section names e.g. Health, see CU006
         return NA_challenge or other_section_after
