@@ -59,7 +59,6 @@ class Appeal:
 
         # Try getting the hazard from the name
         hazard_from_title = self.split_report_title(self.name)[1].strip().lower()
-        print(f'Hazard from title: {hazard_from_title}')
 
         # Check if the title matches an official hazard name (or keyword)
         official_hazards = definitions.OFFICIAL_HAZARD_NAMES
