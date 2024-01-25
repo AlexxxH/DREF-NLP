@@ -1,12 +1,10 @@
 import requests
 from fastapi import FastAPI, Query, HTTPException
 
-from dref_parsing.parser_utils import *
+from dref_parsing import parser_utils
 from dref_parsing.appeal import Appeal
 
-
 app = FastAPI()
-
 
 @app.post("/parse/")
 async def run_parsing(
@@ -93,7 +91,7 @@ async def run_parsing(
     lead = Appeal_code 
     
     try:
-        all_parsed = parse_PDF_combined(lead)
+        all_parsed = parser_utils.parse_PDF_combined(lead)
     except ExceptionNotInAPI:
         raise HTTPException(status_code=404, 
                             detail=f"{lead} doesn't have a DREF Final Report in IFRC GO appeal database")
