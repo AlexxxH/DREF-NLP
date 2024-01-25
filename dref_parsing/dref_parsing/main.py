@@ -1,4 +1,5 @@
 import requests
+import pandas as pd
 from fastapi import FastAPI, Query, HTTPException
 
 from dref_parsing import parser_utils
