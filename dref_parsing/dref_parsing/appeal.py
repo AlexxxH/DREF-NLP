@@ -127,7 +127,8 @@ class Appeal:
         # Convert to AppealDocument type
         appeal_documents = []
         for document_data in appeal_documents_data:
-            document_data['document_type'] = document_data.pop('type')
+            if 'type' in document_data:
+                document_data['document_type'] = document_data.pop('type')
             appeal_documents.append(
                 AppealDocument(**document_data)
             )
