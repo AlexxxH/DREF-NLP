@@ -36,26 +36,17 @@ async def run_parsing(
     <li> PDF Parsing didn't work
     </ul>
     """    
-    try:
-        appeal = Appeal(mdr_code=appeal_code)
-        appeal_data = pd.DataFrame([{
-            'Appeal code': appeal_code,
-            'Hazard': appeal.official_hazard_name, 
-            'Country': appeal.country,
-            'Region': appeal.region,
-            'Date': appeal.start_date
-        }])
-        appeal_document = appeal.get_dref_final_report()
-        exs_parsed, _ = appeal_document.get_challenges_lessons_learned()
-        all_parsed = exs_parsed.merge(appeal_data, on='Appeal code')
-    except parser_utils.ExceptionNotInAPI:
-        raise HTTPException(status_code=404, 
-                            detail=f"{appeal_code} doesn't have a DREF Final Report in IFRC GO appeal database")
-    except parser_utils.ExceptionNoURLforPDF:
-        raise HTTPException(status_code=404, 
-                            detail=f"PDF URL for Appeal code {appeal_code} was not found using IFRC GO API call appeal_document")
-    except:
-        raise HTTPException(status_code=500, detail="PDF Parsing didn't work by some reason")
+    appeal = Appeal(mdr_code=appeal_code)
+    appeal_data = pd.DataFrame([{
+        'Appeal code': appeal_code,
+        'Hazard': appeal.official_hazard_name, 
+        'Country': appeal.country,
+        'Region': appeal.region,
+        'Date': appeal.start_date
+    }])
+    appeal_document = appeal.get_dref_final_report()
+    exs_parsed, _ = appeal_document.get_challenges_lessons_learned()
+    all_parsed = exs_parsed.merge(appeal_data, on='Appeal code')
 
     df = all_parsed[['Excerpt', 'Learning', 'DREF_Sector', 'Appeal code', 'Hazard', 'Country', 'Date', 'Region']]
 
