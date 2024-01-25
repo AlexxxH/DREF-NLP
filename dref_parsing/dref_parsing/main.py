@@ -47,10 +47,10 @@ async def run_parsing(
         appeal_document = appeal.get_dref_final_report()
         exs_parsed, _ = appeal_document.get_challenges_lessons_learned()
         all_parsed = exs_parsed.merge(appeal_data, on='Appeal code')
-    except ExceptionNotInAPI:
+    except parser_utils.ExceptionNotInAPI:
         raise HTTPException(status_code=404, 
                             detail=f"{appeal_code} doesn't have a DREF Final Report in IFRC GO appeal database")
-    except ExceptionNoURLforPDF:
+    except parser_utils.ExceptionNoURLforPDF:
         raise HTTPException(status_code=404, 
                             detail=f"PDF URL for Appeal code {appeal_code} was not found using IFRC GO API call appeal_document")
     except:
@@ -92,10 +92,10 @@ async def run_parsing(
     
     try:
         all_parsed = parser_utils.parse_PDF_combined(lead)
-    except ExceptionNotInAPI:
+    except parser_utils.ExceptionNotInAPI:
         raise HTTPException(status_code=404, 
                             detail=f"{lead} doesn't have a DREF Final Report in IFRC GO appeal database")
-    except ExceptionNoURLforPDF:
+    except parser_utils.ExceptionNoURLforPDF:
         raise HTTPException(status_code=404, 
                             detail=f"PDF URL for Appeal code {lead} was not found using IFRC GO API call appeal_document")
     except:
