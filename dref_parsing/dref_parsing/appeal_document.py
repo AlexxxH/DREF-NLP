@@ -415,20 +415,22 @@ class AppealDocument:
             if sector_name.lower().count(sector)>0: 
                 return sector_mapping[sector]
 
-        sectors = pd.DataFrame(definitions.SECTORS)
-        if sector_name.strip().lower() in sectors['id'].str.lower().unique():
-            return sector_name
-        if sector_name.strip().lower() in sectors['name'].str.lower().unique():
-            return sectors.set_index('name').loc[sector_name.strip(),'id']
+        for sector in definitions.SECTORS:
+            if sector_name.strip().lower() == sector['id'].strip().lower():
+                return sector['id']
+        for sector in definitions.SECTORS:
+            if sector_name.strip().lower() == sector['name'].strip().lower():
+                return sector['id']
         
         return 'Unknown'
 
 
     def full_sector_name(self, sector_name):
-        sectors = pd.DataFrame(definitions.SECTORS)
-        sectors = sectors[sectors['true name']]
-        if sector_name.strip() in sectors.id.values:
-            return sectors.set_index('id').loc[sector_name.strip(),'name']
+        for sector in definitions.SECTORS:
+            if sector['true name']:
+                if sector_name.strip().lower() == sector['id'].strip().lower():
+                    return sector['name']
+
         return 'Unknown'
 
 

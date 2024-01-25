@@ -2,10 +2,6 @@ import re
 
 all_bullets = ['•','●','▪','-']
 
-# If char is neither lower or upper case, it is not a letter
-def is_char_a_letter(c):
-    return c.isalpha()
-
 # removes all given symbols from a string
 def remove_symbols(s, symbols=[' ']):
     return ''.join([c for c in s if not c in symbols])
@@ -54,9 +50,9 @@ def get_bottom_line(s, drop_spaces=False, drop_empty=True):
 def exist_two_letters_in_a_row(ch):
     if len(ch)<2:
         return False
-    is_previous_letter = is_char_a_letter(ch[0])
+    is_previous_letter = ch[0].isalpha()
     for c in ch[1:]:
-        is_current_letter = is_char_a_letter(c)
+        is_current_letter = c.isalpha()
         if is_previous_letter and is_current_letter:
             return True
         is_previous_letter = is_current_letter
