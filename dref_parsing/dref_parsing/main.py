@@ -67,6 +67,7 @@ async def run_parsing(
         description="Starts with 'MDR' followed by 5 symbols. <br> Some available codes: DO013, BO014, CL014, AR017, VU008, TJ029, SO009, PH040, RS014, FJ004, CD031, MY005, LA007, CU006, AM006",
         min_length=8,
         max_length=8,
+        pattern="^MDR[A-Z0-9]{5}$",
         required=True
         )
     ):
