@@ -286,7 +286,7 @@ def shorten_sector(sector_name):
 
     sectors = get_sectors_df()
     if sector_name.strip() in sectors.id.values:
-        return sector_name
+        return sector_name.strip()
     if sector_name.strip() in sectors.name.values:
         return sectors.set_index('name').loc[sector_name.strip(),'id']
     
