@@ -46,12 +46,9 @@ def get_bottom_line(s, drop_spaces=False, drop_empty=True):
 def exist_two_letters_in_a_row(ch):
     if len(ch)<2:
         return False
-    is_previous_letter = ch[0].isalpha()
-    for c in ch[1:]:
-        is_current_letter = c.isalpha()
-        if is_previous_letter and is_current_letter:
+    for i in range(len(ch) - 1):
+        if ch[i].isalpha() and ch[i+1].isalpha():
             return True
-        is_previous_letter = is_current_letter
     return False
 
 # Strip string of special symbols and sequences (from beginning & end)
@@ -141,7 +138,7 @@ def drop_image_caption(a, patterns = ['(Photo:', '(Image:', 'Source:'] ):
 
 # Remove a piece of text that presumable is an image caption because it contains 'pattern"
 def drop_image_caption_one(a, pattern = '(Photo:'):
-    if a.count(pattern)==0:
+    if pattern not in a:
         return a
     # Find where the pattern occurs, and the caption ends
     i0 = findall(pattern, a)[0][0]
@@ -166,9 +163,11 @@ def drop_image_caption_one(a, pattern = '(Photo:'):
 
 # Loops over list and splits each element by separator(s)
 # Possible extra_separators: "In addition,"  but it's not always separator.
-def split_list_by_separator(chs, seps = ['\n\n','\n \n','\n  \n','\n   \n',
-                            '\n●','\n•','\n-','\n2.','\n3.','\n4.','\n5.'], 
-                            extra_sep=['\nOutput 1','\nOutput 2','\nOutcome 1','\nOutcome 2']):
+def split_list_by_separator(
+        chs, 
+        seps = ['\n\n','\n \n','\n  \n','\n   \n', '\n●','\n•','\n-','\n2.','\n3.','\n4.','\n5.'], 
+        extra_sep=['\nOutput 1','\nOutput 2','\nOutcome 1','\nOutcome 2']
+    ):
     new_chs = []
     for ch in chs:
         cc = ch[1]
@@ -224,39 +223,39 @@ def split_text_by_separator(cc0, seps = ['\n\n'], bullets=['\n●','\n•','\n-'
 # replaces all separators by 0th separator and then splits
 def split_by_seps(cc, seps):
     for sep in seps[1:]:
-        cc = cc.replace(sep,seps[0])
+        cc = cc.replace(sep, seps[0])
     return cc.split(seps[0])
 
-
 # ****************************************************************************************
-# If the first char is upper-case
+# Does the string s start from the start of a sentence, or is it from part way through
 def is_sentence_start(s):
-    for i in range(len(s)):
-        c = s[i]
-        if c.islower() and (not c.isupper()):
+    for i, char in enumerate(s):
+        # Lowercase
+        if char.islower() and (not char.isupper()):
             return 0
-        if c.isupper() and (not c.islower()):
+        # Uppercase
+        if char.isupper() and (not char.islower()):
+            # Last character
             if i+1>=len(s): 
-                return 0 # One char is not a sentence
+                return 0
+            # Two capital letters (abbreviation). Cannot tell if this is a sentence start
             if s[i+1].isupper() and (not s[i+1].islower()):
-                # Two capital letters (abbreviation). 
-                # Cannot tell if this is a sentence start
                 return 0.5
+            # Capital letter then small letter
             else:
-                # Capital letter then small letter
                 return 1
-        if c in all_bullets: 
-            # bullet point is like a start of sentence
+        # bullet point is like a start of sentence
+        if char in all_bullets: 
             return 1
     # if no letters found - lower or upper - then it's not a sentence, hence not a sentence start
     return 0
 
 
 def is_sentence_end(s, endings=['.', '?', '!']):
-    s2 = s.rstrip('\n ')
-    if len(s2)==0:
+    s = s.rstrip('\n ')
+    if len(s)==0:
         return False
-    return s2[len(s2)-1] in endings
+    return s[-1] in endings
 
 # ****************************************************************************************
 # If smth strange i.e. 'and' just before the separator
@@ -298,11 +297,11 @@ def skip_ch(ch):
         return True
     if ch.startswith('Not applicable') and (len(ch)<30):
         return True
-    if ch.strip(' ').strip('\n').strip(' ').strip('.').lower() in ['none', 'n/a']:
+    if ch.strip(' \n.').lower() in ['none', 'n/a']:
         return True
     if ch.startswith('Similar challenges as') and (len(ch)<70):
         return True
-    if ch.strip(' ').strip('\n').strip('\t').startswith('Not enough reporting') and (len(ch)<105):
+    if ch.strip(' \n\t').startswith('Not enough reporting') and (len(ch)<105):
         return True
     return False
 
