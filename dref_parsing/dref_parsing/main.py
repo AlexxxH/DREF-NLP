@@ -1,6 +1,7 @@
 from fastapi import FastAPI, Query, HTTPException
 
 from dref_parsing.parser_utils import *
+from dref_parsing.appeal import Appeal
 
 
 app = FastAPI()
@@ -51,6 +52,7 @@ async def run_parsing(
 
         # Check if the same as old version
         results[lead] = all_parsed_new.equals(all_parsed)
+        print(all_parsed_new)
         print(f'{lead}: {("Pass" if results[lead] else "FAIL")}')
     
     if all(results.values()):
