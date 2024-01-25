@@ -1,5 +1,9 @@
 import re
 
+# ****************************************************************************************
+# STRING AND TEXT OPERATIONS
+# ****************************************************************************************
+
 all_bullets = ('•','●','▪','-')
 
 # Returns substring preceeding a number
@@ -24,9 +28,12 @@ def has_digit_dot_digit(s):
                 return True
     return False
 
-# ****************************************************************************************
-# STRING OPERATIONS
-# ****************************************************************************************
+# Use Python find function, with an option of ignoring case
+def find_ignore_case(value, string, ignore_case, start=None, end=None):
+    if ignore_case:
+        return string.lower().find(value.lower(), start, end)
+    return string.find(value, start, end)
+
 
 def replace_texts(oldvalues, newvalue, string):
     for oldvalue in oldvalues:
@@ -52,8 +59,8 @@ def exist_two_letters_in_a_row(ch):
     return False
 
 # Strip space and bullets from beginning and end, and strip 1., 2., etc from beginning
-def strip_all(s):
-    s = s.strip(''.join(all_bullets))
+def strip_bullets(s):
+    s = s.strip().strip(''.join(all_bullets))
     s = re.sub("^([\s.•●▪-]*(\.|[0-9]\.)*)+", "", s)
 
     return s
@@ -137,11 +144,6 @@ def findall(pattern, s, n=30, nback=-1, stop_pattern=None, ignore_case=True):
 
     return ii
 
-
-def find_ignore_case(value, string, ignore_case, start=None, end=None):
-    if ignore_case:
-        return string.lower().find(value.lower(), start, end)
-    return string.find(value, start, end)
 
 #*********************************************************************************************
 # Removes a piece of text that presumably is an image caption 

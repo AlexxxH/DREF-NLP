@@ -579,7 +579,7 @@ class AppealDocument:
         # Tidy the challenges and skip some
         tidy_chs = []
         for ch in chs:
-            ch_text = utils.strip_all(ch[1])
+            ch_text = utils.strip_bullets(ch[1])
             if self.skip_ch(ch_text) or len(ch_text)<=5:
                 continue
             ch_text = ch_text.replace('\n', '')
@@ -616,7 +616,7 @@ class AppealDocument:
         # Skip if starts with something irrelevent, and not too long
         bad_starts = ['None', 'Nothing', 'No challenge', 'No lesson', 'Not applicable']
         for bad_start in bad_starts:
-            if utils.strip_all(ch.strip()).startswith(bad_start) and (len(ch)<30):
+            if utils.strip_bullets(ch.strip()).startswith(bad_start) and (len(ch)<30):
                 return True
         if ch.startswith('Similar challenges as') and (len(ch)<70):
             return True
