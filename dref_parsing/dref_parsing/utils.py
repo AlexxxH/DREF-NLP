@@ -1,6 +1,6 @@
 import re
 
-all_bullets = ['•','●','▪','-']
+all_bullets = ('•','●','▪','-')
 
 # Returns substring preceeding a number
 def before_number(s):
@@ -55,8 +55,10 @@ def exist_two_letters_in_a_row(ch):
     return False
 
 # Strip string of special symbols and sequences (from beginning & end)
-def strip_all(s, left=True, right=True, symbols=[' ','\n']+all_bullets, 
-              start_sequences = ['.','1.','2.','3.','4.','5.','6.','7.','8.','9.']):
+def strip_all(s, left=True, right=True):
+    symbols=[' ','\n']+list(all_bullets)
+    start_sequences = ['.','1.','2.','3.','4.','5.','6.','7.','8.','9.']
+    
     for i in range(20):
         for symb in symbols:
             if left:  s = s.lstrip(symb)
@@ -70,7 +72,7 @@ def strip_all(s, left=True, right=True, symbols=[' ','\n']+all_bullets,
 # Return bullet char if the string starts with a bullet.
 # Otherwise - returns an empty string
 def starts_with_bullet(s0, bullets=all_bullets):
-    s = s0.lstrip('\n ')
+    s = s0.lstrip()
     if len(s)==0:
         return ''
     if s[0] in bullets:
@@ -81,20 +83,6 @@ def starts_with_bullet(s0, bullets=all_bullets):
 # -------------------------------------------
 def drop_spaces_between_linebreaks(txt):
     return re.sub('\n[ \t]+\n', '\n\n', txt)
-
-# split a string into list of words
-def get_words_from_string(s):
-    ww = s.lower().split(' ')
-    ww = [w.strip('-').strip(' ') for w in ww]
-    ww = [w for w in ww if w!='']
-    return ww 
-
-# Finds common words in 2 strings
-def get_common_words(s1,s2):
-    w1 = get_words_from_string(s1)
-    w2 = get_words_from_string(s2)
-    common = set(w1).intersection(set(w2))
-    return common
 
 # ****************************************************************************************
 # Finding Text
