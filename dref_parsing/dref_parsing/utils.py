@@ -2,10 +2,6 @@ import re
 
 all_bullets = ['•','●','▪','-']
 
-# removes all given symbols from a string
-def remove_symbols(s, symbols=[' ']):
-    return ''.join([c for c in s if not c in symbols])
-
 # Returns substring preceeding a number
 def before_number(s):
     for i in range(len(s)):
@@ -40,7 +36,7 @@ def replace_texts(oldvalues, newvalue, string):
 # get the bottom line, i.e. text after the last linebreak
 def get_bottom_line(s, drop_spaces=False, drop_empty=True):
     if drop_spaces:
-        s = remove_symbols(s, symbols=[' '])
+        s = s.replace(' ', '')
     lines = s.split('\n')
     if drop_empty:
         lines = [line for line in lines if line.strip(' ')!='']

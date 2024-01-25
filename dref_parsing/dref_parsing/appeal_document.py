@@ -380,7 +380,7 @@ class AppealDocument:
             # keep what's after multiple linebreaks
             s = s[s.rfind("\n\n\n"):]
             # remove linebreaks
-            s = utils.remove_symbols(s, symbols=['\n']).strip(' ')
+            s = s.replace('\n', '').strip(' ')
 
             # Save string back to tuple:
             prs_processed.append( (pr[0], s) )
