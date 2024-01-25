@@ -2,6 +2,7 @@
 DREF Document Class
 """
 import io
+import re
 import copy
 import requests
 from functools import cached_property
@@ -220,17 +221,12 @@ class AppealDocument:
         
 
     def get_CHs_from_text(self):
-        patterns = [
-            '\n\nChallenges', 
-            '\n \nChallenges', 
-            '\n  \nChallenges', 
-            '\nChallenges \n', 
-            '\n\n Challenges'
-        ]
-        chs = utils.findall_patterns(
-            patterns = patterns, 
-            s0 = self.content, 
-            region = True, 
+        patterns = ['\n\nChallenges', '\n \nChallenges', '\n  \nChallenges', 
+        '\nChallenges \n', '\n\n Challenges']
+        chs = utils.findall(
+            pattern = patterns[0], 
+            s = utils.replace_texts(patterns[1:], patterns[0], self.content),
+            region=True, 
             n = 50000, 
             nback = 5, 
             pattern2 = '\nLessons '
@@ -259,9 +255,9 @@ class AppealDocument:
 
 
     def get_LLs_from_text(self):
-        lls = utils.findall_patterns(
-            patterns = '\nLessons', 
-            s0 = self.content, 
+        lls = utils.findall(
+            pattern = '\nLessons', 
+            s = self.content, 
             region = True, 
             n = 7000, 
             nback = 0
@@ -306,9 +302,9 @@ class AppealDocument:
             '\nPopulation targeted',
             '\nTotal number of people reached'
         ]
-        prs = utils.findall_patterns(
-            patterns = section_markers, 
-            s0 = self.content, 
+        prs = utils.findall(
+            pattern = section_markers[0], 
+            s = utils.replace_texts(section_markers[1:], section_markers[0], self.content), 
             region = True, 
             n = 0, 
             nback = 100
@@ -337,9 +333,9 @@ class AppealDocument:
             in definitions.SECTORS 
             if sector['id'] == 'Strategies'
         ]
-        prs = utils.findall_patterns(
-            patterns = strategy_sections, 
-            s0 = self.content, 
+        prs = utils.findall(
+            pattern = strategy_sections[0], 
+            s = utils.replace_texts(strategy_sections[1:], strategy_sections[0], self.content), 
             region = True, 
             n = 0, 
             nback = 100
@@ -359,9 +355,9 @@ class AppealDocument:
         Sections for the new template
         """
         # find what precedes pattern
-        prs = utils.findall_patterns(
-            patterns = ["reached"], 
-            s0 = self.content, 
+        prs = utils.findall(
+            pattern = "reached", 
+            s = self.content, 
             region = True,
             n = 0, 
             nback = 100

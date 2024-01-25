@@ -2,13 +2,9 @@ import re
 
 all_bullets = ['•','●','▪','-']
 
-# Is char a digit 0-9?
-def is_digit(c):
-    return c >= '0' and c<='9'
-
 # If char is neither lower or upper case, it is not a letter
 def is_char_a_letter(c):
-    return c.islower() or c.isupper()
+    return c.isalpha()
 
 # removes all given symbols from a string
 def remove_symbols(s, symbols=[' ']):
@@ -17,28 +13,33 @@ def remove_symbols(s, symbols=[' ']):
 # Returns substring preceeding a number
 def before_number(s):
     for i in range(len(s)):
-        if is_digit(s[i]):
+        if s[i].isdigit():
             return s[:i]
     return s
 
 # Returns substring after a number
 def after_number(s):
     for i in range(len(s)-1,-1,-1): 
-        if is_digit(s[i]):
+        if s[i].isdigit():
             return s[i+1:]
     return s
 
 # Does it have substrings like '1.5', typical for section numbers
 def has_digit_dot_digit(s):
     for i in range(len(s)-2):
-        if is_digit(s[i]):
-            if (s[i+1]=='.') and is_digit(s[i+2]):
+        if s[i].isdigit():
+            if (s[i+1]=='.') and s[i+2].isdigit():
                 return True
     return False
 
 # ****************************************************************************************
 # STRING OPERATIONS
 # ****************************************************************************************
+
+def replace_texts(oldvalues, newvalue, string):
+    for oldvalue in oldvalues:
+        string = string.replace(oldvalue, newvalue)
+    return string
 
 # get the bottom line, i.e. text after the last linebreak
 def get_bottom_line(s, drop_spaces=False, drop_empty=True):
@@ -145,22 +146,6 @@ def findall(pattern, s, region=True, n=30, nback=-1, pattern2='', ignoreCase=Tru
             ii.append(i)
         i = s.find(pattern, i+1)
     return ii    
-
-# **************************************************************************************
-# Wrapper: allows calling findall with a list of patterns 
-# (by replacement, i.e. the string fragments can be modified)
-def findall_patterns(patterns, s0, region=True, n=30, nback=-1, pattern2='', ignoreCase=True):
-    if type(patterns) != list:
-        # prepare for usual call 
-        pattern = patterns
-        s = s0
-    else:
-        # Replace in s all other patterns with the 0th pattern and then call
-        pattern = patterns[0]
-        s = s0
-        for p in patterns[1:]:
-            s = s.replace(p,pattern)
-    return findall(pattern=pattern, s=s, region=region, n=n, nback=nback, pattern2=pattern2, ignoreCase=ignoreCase)
 
 # ************************************************************************
 # Helper functions for avoid_pagebreak
