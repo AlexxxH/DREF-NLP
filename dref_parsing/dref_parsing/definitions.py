@@ -1,20 +1,21 @@
-OFFICIAL_HAZARD_NAMES = ['Flood',
-  'Drought',
-  'Earthquake',
-  'Population Movement',
-  'Epidemic',
-  'Cyclone',
-  'Volcanic Eruption',
-  'Civil Unrest',
-  'Fire',
-  'Food Insecurity',
-  'Tornado',
-  'Transport Accident',
-  'Cold Wave',
-  'Storm Surge',
-  'Heat Wave',
-  'Pluvial/Flash Flood'
-]
+OFFICIAL_HAZARD_NAMES = {
+  'Pluvial/Flash Flood': ['flash flood', 'pluvial', 'flash floods', 'pluvial/flash floods'],
+  'Flood': ['floods'],
+  'Drought': [],
+  'Earthquake': [],
+  'Population Movement': ['population', 'movement'],
+  'Epidemic': ['outbreak'],
+  'Cyclone': [],
+  'Volcanic Eruption': ['volcanic', 'eruption'],
+  'Civil Unrest': ['attack'],
+  'Fire': [],
+  'Food Insecurity': ['food', 'insecurity'],
+  'Tornado': [],
+  'Transport Accident': ['transport', 'accident'],
+  'Cold Wave': ['hailstorm', 'cold', 'hailstorms'],
+  'Storm Surge': ['strong wind', 'storms', 'storms surge', 'storm'],
+  'Heat Wave': ['heat']
+}
 DREF_FINAL_REPORT_NAMES = [
   'DREF Operation Final Report',
   'DREF Final Report',

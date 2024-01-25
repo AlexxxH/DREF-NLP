@@ -58,27 +58,20 @@ class Appeal:
             return self.disaster_type
 
         # Try getting the hazard from the name
-        hazard_from_title = self.split_report_title(str(self.name))[1].replace('Floods','Flood').replace('Storms','Storm')
-        if hazard_from_title in definitions.OFFICIAL_HAZARD_NAMES:
-            return hazard_from_title
-        if hazard_from_title in ['Flash Flood','Pluvial']: 
-            return 'Pluvial/Flash Flood'
+        hazard_from_title = self.split_report_title(self.name)[1].strip().lower()
+        print(f'Hazard from title: {hazard_from_title}')
 
-        # Check values
-        hazard_titles_map = {
-            'hailstorm': 'Cold Wave',
-            'strong wind': 'Storm Surge',
-            'attack': 'Civil Unrest',
-            'outbreak': 'Epidemic'
-        }
-        for hazard in hazard_titles_map:
-            if hazard_from_title.lower().count(hazard) > 0:
-                return hazard_titles_map[hazard]
+        # Check if the title matches an official hazard name (or keyword)
+        official_hazards = definitions.OFFICIAL_HAZARD_NAMES
+        for hazard, hazard_keywords in official_hazards.items():
+            if hazard_from_title in ([hazard.strip().lower()] + hazard_keywords):
+                return hazard
 
-        # Get common words between the title and official hazard names
-        hazards_with_commons = [h for h in definitions.OFFICIAL_HAZARD_NAMES if len(utils.get_common_words(h, hazard_from_title)) > 0]
-        if len(hazards_with_commons) > 0:
-            return hazards_with_commons[0]
+        # Check if any official hazard names are contained in the title
+        for hazard, hazard_keywords in official_hazards.items():
+            for hazard_name in [hazard.lower()]+hazard_keywords:
+                if hazard_name in hazard_from_title:
+                    return hazard
 
         return 'Other'
         
