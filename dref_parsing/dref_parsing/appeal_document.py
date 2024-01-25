@@ -145,13 +145,13 @@ class AppealDocument:
             ) for ch 
             in parsed
         ]
-        exs_parsed = pd.DataFrame(exs_parsed, columns=['position','Modified Excerpt','Learning','section'])
+        exs_parsed = pd.DataFrame(exs_parsed, columns=['position','Excerpt','Learning','section'])
 
         # Convert section name to full and short DREF_sector:
         exs_parsed['DREF_Sector_id'] = exs_parsed['section'].apply(lambda x: document.shorten_sector(x))
         exs_parsed['DREF_Sector'] = exs_parsed['DREF_Sector_id'].apply(lambda x: document.full_sector_name(x))
 
-        exs_parsed['lead'] = document.mdr_code
+        exs_parsed['Appeal code'] = document.mdr_code
 
         return exs_parsed, parsed
 
