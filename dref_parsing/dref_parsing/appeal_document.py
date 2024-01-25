@@ -118,20 +118,12 @@ class AppealDocument:
 
         # Get challenges and lessons learned
         challenges = [
-            (
-                ch[0], 
-                ch[1], 
-                'Challenges'
-            ) for ch 
-            in document.get_CHs_from_text()
+            (ch[0], ch[1], 'Challenges') for ch 
+            in document.get_challenges_from_text()
         ]
         lessons_learned = [
-            (
-                ch[0], 
-                ch[1], 
-                'Lessons Learnt'
-            ) for ch 
-            in document.get_LLs_from_text()
+            (ch[0], ch[1], 'Lessons Learnt') for ch 
+            in document.get_lessons_learned_from_text()
         ]
         parsed = challenges + lessons_learned
 
@@ -142,14 +134,13 @@ class AppealDocument:
                 ch[1], 
                 ch[2], 
                 document.get_section_from_position(ch[0])
-            ) for ch 
-            in parsed
+            ) for ch in parsed
         ]
         exs_parsed = pd.DataFrame(exs_parsed, columns=['position','Excerpt','Learning','section'])
 
         # Convert section name to full and short DREF_sector:
-        exs_parsed['DREF_Sector_id'] = exs_parsed['section'].apply(lambda x: document.shorten_sector(x))
-        exs_parsed['DREF_Sector'] = exs_parsed['DREF_Sector_id'].apply(lambda x: document.full_sector_name(x))
+        exs_parsed['DREF_Sector_id'] = exs_parsed['section'].apply(lambda section: document.shorten_sector(section))
+        exs_parsed['DREF_Sector'] = exs_parsed['DREF_Sector_id'].apply(lambda sector_id: document.get_full_sector_name(sector_id))
 
         exs_parsed['Appeal code'] = document.mdr_code
 
@@ -252,7 +243,7 @@ class AppealDocument:
             self.content = self.content[:start] + pbflag + self.content[finish:]
         
 
-    def get_CHs_from_text(self):
+    def get_challenges_from_text(self):
         patterns = ['\n\nChallenges', '\n \nChallenges', '\n  \nChallenges', 
         '\nChallenges \n', '\n\n Challenges']
         chs = utils.findall(
@@ -280,7 +271,7 @@ class AppealDocument:
             too_long = len(ch[1])>3500
             quite_long = len(ch[1])>1000
             if overlaps_next or too_long or (quite_long and self.stop_at_multiple_LBs(ch[1])):
-                chs[i] = (ch[0], self.finish_LL_section(ch[1], stop='\n\n\n\n'))
+                chs[i] = (ch[0], self.finish_lessons_learned_section(ch[1], stop='\n\n\n\n'))
         
         chs = [(ch[0], self.avoid_pagebreak(ch[1])) for ch in chs]
         chs = [ch for ch in chs if ch[1]!='']
@@ -289,7 +280,7 @@ class AppealDocument:
         return chs
 
 
-    def get_LLs_from_text(self):
+    def get_lessons_learned_from_text(self):
         # Get the lessons learned section
         lls = utils.findall(
             pattern = '\nLessons', 
@@ -301,9 +292,9 @@ class AppealDocument:
         # Tidy the lessons learned
         lls_tidy = []
         for ll in lls:
-            ll_text = self.strip_LL_section_start(ll[1])
+            ll_text = self.strip_lessons_learned_section_start(ll[1])
             ll_text = self.avoid_pagebreak(ll_text)
-            ll_text = self.finish_LL_section(ll_text)
+            ll_text = self.finish_lessons_learned_section(ll_text)
             if ll_text != '':
                 lls_tidy.append((ll[0], ll_text))
         lls = self.split_and_clean_CHLL(lls_tidy)
@@ -326,16 +317,16 @@ class AppealDocument:
         Get a list of all Section names from PDF text
         """
         # "Classic" sections, by markers:
-        prs1 = self.find_sections_classic()
+        sections_classic = self.find_sections_classic()
 
         # "Strategy" sections, by names:
-        prs2 = self.find_sections_strategy()
+        sections_strategic = self.find_sections_strategy()
 
         # New-template sections, by markers:
-        prs3 = self.find_sections_new()
+        sections_new = self.find_sections_new()
 
         # Return all combined
-        return prs1 + prs2 + prs3
+        return sections_classic + sections_strategic + sections_new
 
 
     def find_sections_classic(self):
@@ -356,7 +347,6 @@ class AppealDocument:
             n = 0, 
             nback = 100
         )
-
         # Several markers can come close to each other, 
         # e.g. 'People reached' & 'People targeted'
         # Then we should keep only the first one:
@@ -386,7 +376,6 @@ class AppealDocument:
             n = 0, 
             nback = 100
         )
-
         # Section Title is always preceeded by linebreak & possibly spaces after it.
         # If not, these are not sections (just plain text), exclude them
         prs = [pr for pr in prs if utils.are_there_only_spaces_before_LB(pr[1])]
@@ -407,7 +396,6 @@ class AppealDocument:
             n = 0, 
             nback = 100
         )
-
         # keep only if the previous line (or previous word) is 'Persons'
         prs = [pr for pr in prs if utils.get_bottom_line(pr[1], drop_spaces=True)=='Persons']
 
@@ -467,7 +455,7 @@ class AppealDocument:
         return 'Unknown'
 
 
-    def full_sector_name(self, sector_name):
+    def get_full_sector_name(self, sector_name):
         for sector in definitions.SECTORS:
             if sector['true name']:
                 if sector_name.strip().lower() == sector['id'].strip().lower():
@@ -510,7 +498,7 @@ class AppealDocument:
     # Find where LL section starts, i.e. strip away its title (smth like 'Lessons Learned:\n')
     # We use one linebreak as pattern, to be safe, even though in 99% of cases
     # there is a double-linebreak after 'Lessons Learned'
-    def strip_LL_section_start(self, s, start =  '\nLessons', pattern='\n'):
+    def strip_lessons_learned_section_start(self, s, start='\nLessons', pattern='\n'):
         tmp = utils.drop_spaces_between_linebreaks(s.lstrip(start))
         # text between '\nLessons' and first linebreak:
         before_LB = tmp.split(pattern)[0]
@@ -525,7 +513,7 @@ class AppealDocument:
 
     # LL section ends when we meet several linebreaks at once.
     # With some exceptions.
-    def finish_LL_section(self, s, stop='\n\n\n'):
+    def finish_lessons_learned_section(self, s, stop='\n\n\n'):
         s2 = utils.drop_spaces_between_linebreaks(s)
         s2 = s2.lstrip('\n')    
         ss = s2.split(stop)
@@ -580,7 +568,7 @@ class AppealDocument:
         tidy_chs = []
         for ch in chs:
             ch_text = utils.strip_bullets(ch[1])
-            if self.skip_ch(ch_text) or len(ch_text)<=5:
+            if self.skip_challenge_lesson_learned(ch_text) or len(ch_text)<=5:
                 continue
             ch_text = ch_text.replace('\n', '')
             ch_text = re.sub(' +', ' ', ch_text)
@@ -598,14 +586,14 @@ class AppealDocument:
             return False
         s_before = s.split(stop)[0]
         s_after = s.split(stop)[1].split('\n\n')[0]
-        NA_challenge = self.skip_ch(s_before.strip('\n '))
+        NA_challenge = self.skip_challenge_lesson_learned(s_before.strip('\n '))
         other_section_after = s_after.strip('\n ').startswith('Strategies for Implementation') 
         #TODO: add other section names e.g. Health, see CU006
         return NA_challenge or other_section_after
 
 
     # Skip challenge when it is basically absent
-    def skip_ch(self, ch): 
+    def skip_challenge_lesson_learned(self, ch): 
         if len(ch)<3:
             return True
         if not utils.exist_two_letters_in_a_row(ch):
