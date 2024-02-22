@@ -98,7 +98,8 @@ class Appeal:
 
         # Filter the documents to only DREF final reports
         dref_final_reports = list(filter(
-            lambda document: document.name.lower() in map(str.lower, definitions.DREF_FINAL_REPORT_NAMES), 
+            lambda document: 'final report' in document.name.lower(), 
+            #lambda document: document.name.lower() in map(str.lower, definitions.DREF_FINAL_REPORT_NAMES), 
             appeal_documents
         ))
 
