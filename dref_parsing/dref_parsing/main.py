@@ -81,7 +81,9 @@ async def run_parsing(
 
     # Renaming: In the program we call it 'lead', while IFRC calls it 'Appeal_code'
     lead = Appeal_code 
-    
+
+    all_parsed = parser_utils.parse_PDF_combined(lead)
+    """
     try:
         all_parsed = parser_utils.parse_PDF_combined(lead)
     except parser_utils.ExceptionNotInAPI:
@@ -92,7 +94,7 @@ async def run_parsing(
                             detail=f"PDF URL for Appeal code {lead} was not found using IFRC GO API call appeal_document")
     except:
         raise HTTPException(status_code=500, detail="PDF Parsing didn't work by some reason")
-
+    """
     df2 = all_parsed[['Modified Excerpt', 'Learning', 'DREF_Sector', 'lead', 'Hazard', 'Country', 'Date', 'Region']]#,'position', 'DREF_Sector_id']]
     df2 = df2.rename(columns={'lead':'Appeal code','Modified Excerpt':'Excerpt'})
     return df2.to_dict()
